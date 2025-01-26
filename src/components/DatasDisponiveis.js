@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useContext } from 'react';
+import React, { useState, useEffect } from 'react';
 import { db } from '../services/firebase';
 import { collection, addDoc, query, getDocs, doc, deleteDoc, updateDoc, where } from 'firebase/firestore';
 import Box from '@mui/material/Box';
@@ -26,10 +26,6 @@ import DialogContent from '@mui/material/DialogContent';
 import DialogTitle from '@mui/material/DialogTitle';
 import Tooltip from '@mui/material/Tooltip';
 import Typography from '@mui/material/Typography';
-import { useTheme } from '@mui/material/styles';
-import { ColorModeContext } from '../App';
-import Brightness4Icon from '@mui/icons-material/Brightness4';
-import Brightness7Icon from '@mui/icons-material/Brightness7';
 
 const cidades = [
   'Mantena',
@@ -48,8 +44,6 @@ function DatasDisponiveis() {
   const [success, setSuccess] = useState('');
   const [openDialog, setOpenDialog] = useState(false);
   const [editingData, setEditingData] = useState(null);
-  const theme = useTheme();
-  const colorMode = useContext(ColorModeContext);
 
   useEffect(() => {
     carregarDatas();
@@ -188,13 +182,6 @@ function DatasDisponiveis() {
         <Typography variant="h4" component="h1">
           Datas Disponíveis
         </Typography>
-        <IconButton
-          sx={{ opacity: 0.7 }}
-          onClick={colorMode.toggleColorMode}
-          color="primary"
-        >
-          {theme.palette.mode === 'dark' ? <Brightness7Icon /> : <Brightness4Icon />}
-        </IconButton>
       </Box>
 
       <Paper sx={{ p: 3, mb: 3 }}>
