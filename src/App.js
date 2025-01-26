@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
 import Formulario from './components/Formulario';
@@ -32,6 +32,44 @@ function App() {
       createTheme({
         palette: {
           mode,
+          primary: {
+            main: '#060950',
+            light: '#2f3275',
+            dark: '#03042e',
+            contrastText: '#ffffff',
+          },
+          secondary: {
+            main: '#1a237e',
+            light: '#534bae',
+            dark: '#000051',
+            contrastText: '#ffffff',
+          },
+          background: {
+            default: mode === 'light' ? '#f5f5f5' : '#121212',
+            paper: mode === 'light' ? '#ffffff' : '#1e1e1e',
+          },
+        },
+        components: {
+          MuiAppBar: {
+            styleOverrides: {
+              root: {
+                backgroundColor: '#060950',
+              },
+            },
+          },
+          MuiButton: {
+            styleOverrides: {
+              root: {
+                borderRadius: 8,
+              },
+              contained: {
+                backgroundColor: '#060950',
+                '&:hover': {
+                  backgroundColor: '#03042e',
+                },
+              },
+            },
+          },
         },
       }),
     [mode],
@@ -44,8 +82,8 @@ function App() {
         <Router>
           <AuthProvider>
             <Routes>
-              <Route path="/" element={<Formulario />} />
               <Route path="/login" element={<Login />} />
+              <Route path="/" element={<Formulario />} />
               <Route
                 path="/dashboard"
                 element={
@@ -86,6 +124,7 @@ function App() {
                   </PrivateRoute>
                 }
               />
+              <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
           </AuthProvider>
         </Router>
