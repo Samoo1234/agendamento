@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Box, Grid, Paper, Typography } from '@mui/material';
+import { Box, Grid, Paper, Typography, CircularProgress } from '@mui/material';
 import { collection, query, where, getDocs, Timestamp } from 'firebase/firestore';
 import { db } from '../services/firebase';
 import {
@@ -25,6 +25,7 @@ ChartJS.register(
 );
 
 function Dashboard() {
+  const [loading, setLoading] = useState(true);
   const [totalAgendamentos, setTotalAgendamentos] = useState(0);
   const [agendamentosHoje, setAgendamentosHoje] = useState(0);
   const [proximosAgendamentos, setProximosAgendamentos] = useState(0);
@@ -160,10 +161,20 @@ function Dashboard() {
         }]
       });
 
+      setLoading(false);
     } catch (error) {
       console.error('Erro ao carregar dados:', error);
+      setLoading(false);
     }
   };
+
+  if (loading) {
+    return (
+      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh' }}>
+        <CircularProgress />
+      </Box>
+    );
+  }
 
   return (
     <Box sx={{ flexGrow: 1, p: 3 }}>

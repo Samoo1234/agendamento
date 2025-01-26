@@ -16,13 +16,14 @@ import {
   IconButton,
   Snackbar,
   Alert,
-  CircularProgress
+  CircularProgress,
+  useTheme,
+  useMediaQuery
 } from '@mui/material';
 import PictureAsPdfIcon from '@mui/icons-material/PictureAsPdf';
-import { useTheme } from '@mui/material/styles';
-import { ColorModeContext } from '../App';
 import Brightness4Icon from '@mui/icons-material/Brightness4';
 import Brightness7Icon from '@mui/icons-material/Brightness7';
+import { ColorModeContext } from '../App';
 import { collection, query, getDocs } from 'firebase/firestore';
 import { db } from '../services/firebase';
 import { jsPDF } from 'jspdf';
@@ -30,21 +31,22 @@ import 'jspdf-autotable';
 
 const cidades = [
   'Mantena',
-  'Barra de São Francisco',
-  'Água Doce do Norte',
-  'Ecoporanga',
-  'Vila Pavão'
+  'Mantenópolis',
+  'Central de Minas',
+  'Alto Rio Novo',
+  'São João de Mantena'
 ];
 
 function Clientes() {
+  const theme = useTheme();
+  const colorMode = useContext(ColorModeContext);
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const [clientes, setClientes] = useState([]);
   const [filtroCidade, setFiltroCidade] = useState('');
   const [filtroPeriodo, setFiltroPeriodo] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
-  const theme = useTheme();
-  const colorMode = useContext(ColorModeContext);
 
   useEffect(() => {
     carregarClientes();
@@ -54,10 +56,18 @@ function Clientes() {
     try {
       const clientesRef = collection(db, 'agendamentos');
       const snapshot = await getDocs(clientesRef);
-      const clientesData = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      }));
+      const clientesData = snapshot.docs.map(doc => {
+        const data = doc.data();
+        return {
+          id: doc.id,
+          ...data,
+          dataNascimento: data.dataNascimento?.toDate?.() || new Date(data.dataNascimento),
+          data: data.data || '',
+          cidade: data.cidade || '',
+          horario: data.horario || '',
+          status: data.status || 'Pendente'
+        };
+      });
       setClientes(clientesData);
       setLoading(false);
     } catch (error) {
@@ -68,16 +78,22 @@ function Clientes() {
   };
 
   const calcularIdade = (dataNascimento) => {
-    const hoje = new Date();
-    const nascimento = new Date(dataNascimento);
-    let idade = hoje.getFullYear() - nascimento.getFullYear();
-    const mes = hoje.getMonth() - nascimento.getMonth();
-    
-    if (mes < 0 || (mes === 0 && hoje.getDate() < nascimento.getDate())) {
-      idade--;
+    if (!dataNascimento) return '';
+    try {
+      const hoje = new Date();
+      const nascimento = new Date(dataNascimento);
+      let idade = hoje.getFullYear() - nascimento.getFullYear();
+      const mes = hoje.getMonth() - nascimento.getMonth();
+      
+      if (mes < 0 || (mes === 0 && hoje.getDate() < nascimento.getDate())) {
+        idade--;
+      }
+      
+      return idade;
+    } catch (error) {
+      console.error('Erro ao calcular idade:', error);
+      return '';
     }
-    
-    return idade;
   };
 
   const filtrarClientes = () => {
@@ -91,58 +107,45 @@ function Clientes() {
   const gerarPDF = () => {
     const doc = new jsPDF();
     
-    // Adiciona a logo
-    const img = new Image();
-    img.src = '/logo new.png';
+    // Adiciona título centralizado
+    doc.setFontSize(16);
+    doc.text('Relatório de Clientes', doc.internal.pageSize.width / 2, 20, { align: 'center' });
     
-    img.onload = () => {
-      // Calcula as dimensões para manter a proporção e não ficar muito grande
-      const imgWidth = 30;
-      const imgHeight = (img.height * imgWidth) / img.width;
-      
-      // Adiciona a imagem centralizada no topo
-      doc.addImage(img, 'PNG', (doc.internal.pageSize.width - imgWidth) / 2, 10, imgWidth, imgHeight);
-      
-      // Adiciona título centralizado abaixo da logo
-      doc.setFontSize(16);
-      doc.text('Relatório de Clientes', doc.internal.pageSize.width / 2, imgHeight + 20, { align: 'center' });
-      
-      // Adiciona data do relatório
-      doc.setFontSize(10);
-      doc.text(
-        `Data do relatório: ${new Date().toLocaleDateString('pt-BR')}`,
-        doc.internal.pageSize.width / 2,
-        imgHeight + 30,
-        { align: 'center' }
-      );
+    // Adiciona data do relatório
+    doc.setFontSize(10);
+    doc.text(
+      `Data do relatório: ${new Date().toLocaleDateString('pt-BR')}`,
+      doc.internal.pageSize.width / 2,
+      30,
+      { align: 'center' }
+    );
 
-      const clientesFiltrados = filtrarClientes();
-      const dados = clientesFiltrados.map(cliente => [
-        cliente.nome,
-        calcularIdade(cliente.dataNascimento),
-        cliente.cidade,
-        cliente.data,
-        cliente.horario,
-        cliente.status
-      ]);
+    const clientesFiltrados = filtrarClientes();
+    const dados = clientesFiltrados.map(cliente => [
+      cliente.nome || '',
+      calcularIdade(cliente.dataNascimento) || '',
+      cliente.cidade || '',
+      cliente.data || '',
+      cliente.horario || '',
+      cliente.status || ''
+    ]);
 
-      doc.autoTable({
-        head: [['Nome', 'Idade', 'Cidade', 'Data', 'Horário', 'Status']],
-        body: dados,
-        startY: imgHeight + 40,
-        theme: theme.palette.mode === 'dark' ? 'dark' : 'striped',
-        styles: {
-          fontSize: 8,
-          cellPadding: 2,
-        },
-        headStyles: {
-          fillColor: theme.palette.mode === 'dark' ? [50, 50, 50] : [220, 220, 220],
-          textColor: theme.palette.mode === 'dark' ? [255, 255, 255] : [0, 0, 0]
-        }
-      });
+    doc.autoTable({
+      head: [['Nome', 'Idade', 'Cidade', 'Data', 'Horário', 'Status']],
+      body: dados,
+      startY: 40,
+      theme: theme.palette.mode === 'dark' ? 'dark' : 'striped',
+      styles: {
+        fontSize: 8,
+        cellPadding: 2,
+      },
+      headStyles: {
+        fillColor: theme.palette.mode === 'dark' ? [50, 50, 50] : [220, 220, 220],
+        textColor: theme.palette.mode === 'dark' ? [255, 255, 255] : [0, 0, 0]
+      }
+    });
 
-      doc.save('relatorio-clientes.pdf');
-    };
+    doc.save('relatorio-clientes.pdf');
   };
 
   if (loading) {
@@ -154,9 +157,16 @@ function Clientes() {
   }
 
   return (
-    <Box sx={{ p: 3 }}>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 4 }}>
-        <Typography variant="h4" component="h1">
+    <Box sx={{ p: { xs: 1, sm: 2, md: 3 } }}>
+      <Box sx={{ 
+        display: 'flex', 
+        flexDirection: { xs: 'column', sm: 'row' }, 
+        justifyContent: 'space-between', 
+        alignItems: { xs: 'stretch', sm: 'center' }, 
+        mb: 4,
+        gap: 2
+      }}>
+        <Typography variant="h4" component="h1" sx={{ fontSize: { xs: '1.5rem', sm: '2rem' } }}>
           Clientes
         </Typography>
         <Box sx={{ display: 'flex', gap: 1 }}>
@@ -172,14 +182,20 @@ function Clientes() {
             startIcon={<PictureAsPdfIcon />}
             onClick={gerarPDF}
             disabled={loading}
+            fullWidth={isMobile}
           >
             Gerar PDF
           </Button>
         </Box>
       </Box>
 
-      <Paper sx={{ p: 3, mb: 3 }}>
-        <Box sx={{ display: 'flex', gap: 2, mb: 3 }}>
+      <Paper sx={{ p: { xs: 1, sm: 2, md: 3 }, mb: 3 }}>
+        <Box sx={{ 
+          display: 'flex', 
+          flexDirection: { xs: 'column', sm: 'row' }, 
+          gap: 2, 
+          mb: 3 
+        }}>
           <TextField
             select
             label="Cidade"
@@ -212,22 +228,28 @@ function Clientes() {
             <TableHead>
               <TableRow>
                 <TableCell>Nome</TableCell>
-                <TableCell>Idade</TableCell>
+                <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' } }}>Idade</TableCell>
                 <TableCell>Cidade</TableCell>
-                <TableCell>Data</TableCell>
+                <TableCell sx={{ display: { xs: 'none', md: 'table-cell' } }}>Data</TableCell>
                 <TableCell>Horário</TableCell>
-                <TableCell>Status</TableCell>
+                <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' } }}>Status</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
               {filtrarClientes().map((cliente) => (
                 <TableRow key={cliente.id}>
-                  <TableCell>{cliente.nome}</TableCell>
-                  <TableCell>{calcularIdade(cliente.dataNascimento)}</TableCell>
-                  <TableCell>{cliente.cidade}</TableCell>
-                  <TableCell>{cliente.data}</TableCell>
-                  <TableCell>{cliente.horario}</TableCell>
-                  <TableCell>{cliente.status}</TableCell>
+                  <TableCell>{cliente.nome || ''}</TableCell>
+                  <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' } }}>
+                    {calcularIdade(cliente.dataNascimento)}
+                  </TableCell>
+                  <TableCell>{cliente.cidade || ''}</TableCell>
+                  <TableCell sx={{ display: { xs: 'none', md: 'table-cell' } }}>
+                    {cliente.data || ''}
+                  </TableCell>
+                  <TableCell>{cliente.horario || ''}</TableCell>
+                  <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' } }}>
+                    {cliente.status || ''}
+                  </TableCell>
                 </TableRow>
               ))}
             </TableBody>
@@ -235,23 +257,25 @@ function Clientes() {
         </TableContainer>
       </Paper>
 
-      <Snackbar
-        open={!!success}
-        autoHideDuration={6000}
-        onClose={() => setSuccess('')}
+      <Snackbar 
+        open={!!error} 
+        autoHideDuration={6000} 
+        onClose={() => setError('')}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
       >
-        <Alert severity="success" sx={{ width: '100%' }}>
-          {success}
+        <Alert onClose={() => setError('')} severity="error" sx={{ width: '100%' }}>
+          {error}
         </Alert>
       </Snackbar>
 
       <Snackbar
-        open={!!error}
+        open={!!success}
         autoHideDuration={6000}
-        onClose={() => setError('')}
+        onClose={() => setSuccess('')}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
       >
-        <Alert severity="error" sx={{ width: '100%' }}>
-          {error}
+        <Alert onClose={() => setSuccess('')} severity="success" sx={{ width: '100%' }}>
+          {success}
         </Alert>
       </Snackbar>
     </Box>

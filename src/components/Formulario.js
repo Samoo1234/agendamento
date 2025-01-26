@@ -66,6 +66,7 @@ function Formulario() {
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState('');
   const [datasDisponiveis, setDatasDisponiveis] = useState([]);
+  const [horariosDisponiveis, setHorariosDisponiveis] = useState(horarios);
   const theme = useTheme();
   const colorMode = useContext(ColorModeContext);
 
@@ -76,6 +77,14 @@ function Formulario() {
       setDatasDisponiveis([]);
     }
   }, [cidade]);
+
+  useEffect(() => {
+    if (cidade && data) {
+      carregarHorariosDisponiveis(cidade, data);
+    } else {
+      setHorariosDisponiveis(horarios);
+    }
+  }, [cidade, data]);
 
   const carregarDatasDisponiveis = async (cidadeSelecionada) => {
     try {
@@ -108,6 +117,29 @@ function Formulario() {
     }
   };
 
+  const carregarHorariosDisponiveis = async (cidadeSelecionada, dataSelecionada) => {
+    try {
+      const agendamentosRef = collection(db, 'agendamentos');
+      const q = query(
+        agendamentosRef,
+        where('cidade', '==', cidadeSelecionada),
+        where('data', '==', dataSelecionada)
+      );
+      const querySnapshot = await getDocs(q);
+      
+      // Pegar horários já agendados
+      const horariosOcupados = querySnapshot.docs.map(doc => doc.data().horario);
+      
+      // Filtrar horários disponíveis
+      const horariosLivres = horarios.filter(horario => !horariosOcupados.includes(horario));
+      
+      setHorariosDisponiveis(horariosLivres);
+    } catch (error) {
+      console.error('Erro ao carregar horários disponíveis:', error);
+      setError('Erro ao carregar horários disponíveis para esta data');
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -118,6 +150,20 @@ function Formulario() {
       const dataExiste = datasDisponiveis.some(d => d.data === data);
       if (!dataExiste) {
         throw new Error('Data selecionada não está disponível');
+      }
+
+      // Verificar se o horário ainda está disponível
+      const agendamentosRef = collection(db, 'agendamentos');
+      const q = query(
+        agendamentosRef,
+        where('cidade', '==', cidade),
+        where('data', '==', data),
+        where('horario', '==', horario)
+      );
+      const querySnapshot = await getDocs(q);
+      
+      if (!querySnapshot.empty) {
+        throw new Error('Este horário já foi agendado. Por favor, escolha outro horário.');
       }
 
       await addDoc(collection(db, 'agendamentos'), {
@@ -139,6 +185,11 @@ function Formulario() {
       setCidade('');
       setData('');
       setHorario('');
+      
+      // Recarregar horários disponíveis após o agendamento
+      if (cidade && data) {
+        carregarHorariosDisponiveis(cidade, data);
+      }
     } catch (error) {
       console.error('Erro ao agendar:', error);
       setError(error.message || 'Erro ao agendar. Por favor, tente novamente.');
@@ -266,18 +317,18 @@ function Formulario() {
           </TextField>
 
           <TextField
-            fullWidth
             select
+            fullWidth
             label="Horário"
             value={horario}
             onChange={(e) => setHorario(e.target.value)}
-            margin="normal"
-            required
             disabled={!data}
+            required
+            sx={{ mb: 2 }}
           >
-            {horarios.map((horario) => (
-              <MenuItem key={horario} value={horario}>
-                {horario}
+            {horariosDisponiveis.map((hora) => (
+              <MenuItem key={hora} value={hora}>
+                {hora}
               </MenuItem>
             ))}
           </TextField>

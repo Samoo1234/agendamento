@@ -19,9 +19,13 @@ import {
   Alert,
   Snackbar,
   Switch,
-  FormControlLabel
+  FormControlLabel,
+  useTheme,
+  useMediaQuery
 } from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
+import Brightness4Icon from '@mui/icons-material/Brightness4';
+import Brightness7Icon from '@mui/icons-material/Brightness7';
 import { auth, db } from '../services/firebase';
 import { 
   createUserWithEmailAndPassword,
@@ -38,10 +42,7 @@ import {
   where,
   serverTimestamp
 } from 'firebase/firestore';
-import { useTheme } from '@mui/material/styles';
 import { ColorModeContext } from '../App';
-import Brightness4Icon from '@mui/icons-material/Brightness4';
-import Brightness7Icon from '@mui/icons-material/Brightness7';
 
 function GerenciarUsuarios() {
   const [usuarios, setUsuarios] = useState([]);
@@ -165,9 +166,16 @@ function GerenciarUsuarios() {
   };
 
   return (
-    <Box sx={{ p: 3 }}>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 4 }}>
-        <Typography variant="h4" component="h1">
+    <Box sx={{ p: { xs: 1, sm: 2, md: 3 } }}>
+      <Box sx={{ 
+        display: 'flex', 
+        flexDirection: { xs: 'column', sm: 'row' }, 
+        justifyContent: 'space-between', 
+        alignItems: { xs: 'stretch', sm: 'center' }, 
+        mb: 4,
+        gap: 2
+      }}>
+        <Typography variant="h4" component="h1" sx={{ fontSize: { xs: '1.5rem', sm: '2rem' } }}>
           Gerenciar Usuários
         </Typography>
         <Box sx={{ display: 'flex', gap: 1 }}>
@@ -181,19 +189,20 @@ function GerenciarUsuarios() {
           <Button
             variant="contained"
             onClick={() => setOpenDialog(true)}
+            fullWidth={useMediaQuery(theme.breakpoints.down('sm'))}
           >
             Novo Usuário
           </Button>
         </Box>
       </Box>
 
-      <Paper sx={{ p: 3 }}>
+      <Paper sx={{ p: { xs: 1, sm: 2, md: 3 }, overflowX: 'auto' }}>
         <TableContainer>
           <Table>
             <TableHead>
               <TableRow>
                 <TableCell>Email</TableCell>
-                <TableCell>Data de Criação</TableCell>
+                <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' } }}>Data de Criação</TableCell>
                 <TableCell align="center">Status</TableCell>
                 <TableCell align="center">Ações</TableCell>
               </TableRow>
@@ -202,7 +211,7 @@ function GerenciarUsuarios() {
               {usuarios.map((usuario) => (
                 <TableRow key={usuario.id}>
                   <TableCell>{usuario.email}</TableCell>
-                  <TableCell>
+                  <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' } }}>
                     {new Date(usuario.metadata.creationTime).toLocaleDateString('pt-BR')}
                   </TableCell>
                   <TableCell align="center">
@@ -215,6 +224,11 @@ function GerenciarUsuarios() {
                         />
                       }
                       label={usuario.disabled ? 'Inativo' : 'Ativo'}
+                      sx={{
+                        '& .MuiFormControlLabel-label': {
+                          display: { xs: 'none', sm: 'block' }
+                        }
+                      }}
                     />
                   </TableCell>
                   <TableCell align="center">
