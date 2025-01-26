@@ -7,6 +7,7 @@ import Login from './components/Login';
 import DashboardHome from './components/Dashboard';
 import DatasDisponiveis from './components/DatasDisponiveis';
 import Clientes from './components/Clientes';
+import GerenciarUsuarios from './components/GerenciarUsuarios';
 import Layout from './components/Layout';
 import PrivateRoute from './components/PrivateRoute';
 import { AuthProvider } from './contexts/AuthContext';
@@ -71,6 +72,16 @@ function App() {
                   <PrivateRoute>
                     <Layout>
                       <Clientes />
+                    </Layout>
+                  </PrivateRoute>
+                }
+              />
+              <Route
+                path="/usuarios"
+                element={
+                  <PrivateRoute>
+                    <Layout>
+                      <GerenciarUsuarios />
                     </Layout>
                   </PrivateRoute>
                 }

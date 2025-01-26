@@ -14,7 +14,7 @@
 - Ícone de acesso à área administrativa
 
 ### 2. Área Administrativa
-Sistema com três seções principais acessíveis via menu de navegação:
+Sistema com quatro seções principais acessíveis via menu de navegação:
 
 #### 2.1 Dashboard
 - Gráficos informativos:
@@ -51,6 +51,19 @@ Sistema com três seções principais acessíveis via menu de navegação:
   - Geração de PDF com os dados filtrados
   - Exportação de relatórios
 
+#### 2.4 Gerenciamento de Usuários
+- Interface para gerenciamento de usuários administrativos
+- Funcionalidades:
+  - Criar novo usuário (email e senha)
+  - Listar usuários existentes
+  - Excluir usuários
+- Acesso restrito apenas a usuários autenticados
+- Tabela com informações:
+  - Email do usuário
+  - Data de criação
+  - Status (ativo/inativo)
+  - Ação de exclusão
+
 ## Tecnologias Utilizadas
 - React.js
 - Material-UI
@@ -82,6 +95,13 @@ Sistema com três seções principais acessíveis via menu de navegação:
 - Implementação dos filtros por cidade
 - Sistema de geração de PDF
 - Exportação de relatórios
+
+### Fase 5 - 
+- Implementação do gerenciamento de usuários
+- Criação da interface de cadastro
+- Sistema de listagem de usuários
+- Funcionalidade de exclusão
+- Integração com Firebase Authentication
 
 ## Como Executar o Projeto
 1. Clone o repositório

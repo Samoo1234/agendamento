@@ -19,6 +19,7 @@ import PeopleIcon from '@mui/icons-material/People';
 import LogoutIcon from '@mui/icons-material/Logout';
 import Brightness4Icon from '@mui/icons-material/Brightness4';
 import Brightness7Icon from '@mui/icons-material/Brightness7';
+import PersonAddIcon from '@mui/icons-material/PersonAdd';
 import { signOut } from 'firebase/auth';
 import { auth } from '../services/firebase';
 import { ColorModeContext } from '../App';
@@ -41,6 +42,7 @@ const menuItems = [
   { text: 'Dashboard', icon: <DashboardIcon />, path: '/dashboard' },
   { text: 'Datas Disponíveis', icon: <EventAvailableIcon />, path: '/datas' },
   { text: 'Clientes', icon: <PeopleIcon />, path: '/clientes' },
+  { text: 'Gerenciar Usuários', icon: <PersonAddIcon />, path: '/usuarios' },
 ];
 
 function Layout({ children }) {

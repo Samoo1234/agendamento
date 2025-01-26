@@ -1,41 +1,45 @@
 import React, { useState, useEffect, useContext } from 'react';
-import { db } from '../services/firebase';
-import { collection, query, getDocs } from 'firebase/firestore';
-import Box from '@mui/material/Box';
-import Paper from '@mui/material/Paper';
-import TextField from '@mui/material/TextField';
-import MenuItem from '@mui/material/MenuItem';
-import Button from '@mui/material/Button';
-import Table from '@mui/material/Table';
-import TableBody from '@mui/material/TableBody';
-import TableCell from '@mui/material/TableCell';
-import TableContainer from '@mui/material/TableContainer';
-import TableHead from '@mui/material/TableHead';
-import TableRow from '@mui/material/TableRow';
-import CircularProgress from '@mui/material/CircularProgress';
-import Alert from '@mui/material/Alert';
-import Snackbar from '@mui/material/Snackbar';
+import {
+  Box,
+  Container,
+  Paper,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  TextField,
+  MenuItem,
+  Button,
+  Typography,
+  IconButton,
+  Snackbar,
+  Alert,
+  CircularProgress
+} from '@mui/material';
 import PictureAsPdfIcon from '@mui/icons-material/PictureAsPdf';
-import { PDFDocument, rgb } from 'pdf-lib';
 import { useTheme } from '@mui/material/styles';
 import { ColorModeContext } from '../App';
 import Brightness4Icon from '@mui/icons-material/Brightness4';
 import Brightness7Icon from '@mui/icons-material/Brightness7';
-import IconButton from '@mui/material/IconButton';
+import { collection, query, getDocs } from 'firebase/firestore';
+import { db } from '../services/firebase';
+import { jsPDF } from 'jspdf';
+import 'jspdf-autotable';
 
 const cidades = [
   'Mantena',
-  'Central de Minas',
-  'Mantenópolis',
-  'Alto Rio Novo',
-  'São João de Mantena'
+  'Barra de São Francisco',
+  'Água Doce do Norte',
+  'Ecoporanga',
+  'Vila Pavão'
 ];
 
 function Clientes() {
-  const [cidadeSelecionada, setCidadeSelecionada] = useState('todos');
-  const [dataInicio, setDataInicio] = useState('');
-  const [dataFim, setDataFim] = useState('');
   const [clientes, setClientes] = useState([]);
+  const [filtroCidade, setFiltroCidade] = useState('');
+  const [filtroPeriodo, setFiltroPeriodo] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
@@ -49,20 +53,16 @@ function Clientes() {
   const carregarClientes = async () => {
     try {
       const clientesRef = collection(db, 'agendamentos');
-      const q = query(clientesRef);
-      const querySnapshot = await getDocs(q);
-      
-      const dados = querySnapshot.docs.map(doc => ({
+      const snapshot = await getDocs(clientesRef);
+      const clientesData = snapshot.docs.map(doc => ({
         id: doc.id,
-        ...doc.data(),
-        idade: calcularIdade(doc.data().dataNascimento)
+        ...doc.data()
       }));
-      
-      setClientes(dados);
+      setClientes(clientesData);
+      setLoading(false);
     } catch (error) {
       console.error('Erro ao carregar clientes:', error);
-      setError('Erro ao carregar lista de clientes');
-    } finally {
+      setError('Erro ao carregar clientes');
       setLoading(false);
     }
   };
@@ -82,155 +82,70 @@ function Clientes() {
 
   const filtrarClientes = () => {
     return clientes.filter(cliente => {
-      const passaFiltroData = (!dataInicio || cliente.data >= dataInicio) &&
-                             (!dataFim || cliente.data <= dataFim);
-      const passaFiltroCidade = cidadeSelecionada === 'todos' || cliente.cidade === cidadeSelecionada;
-      
-      return passaFiltroData && passaFiltroCidade;
+      const passaFiltroCidade = !filtroCidade || cliente.cidade === filtroCidade;
+      const passaFiltroPeriodo = !filtroPeriodo || cliente.data === filtroPeriodo;
+      return passaFiltroCidade && passaFiltroPeriodo;
     });
   };
 
-  const gerarPDF = async () => {
-    try {
-      setLoading(true);
+  const gerarPDF = () => {
+    const doc = new jsPDF();
+    
+    // Adiciona a logo
+    const img = new Image();
+    img.src = '/logo new.png';
+    
+    img.onload = () => {
+      // Calcula as dimensões para manter a proporção e não ficar muito grande
+      const imgWidth = 30;
+      const imgHeight = (img.height * imgWidth) / img.width;
       
-      const MAX_REGISTROS = 50;
-      let clientesFiltrados = filtrarClientes();
+      // Adiciona a imagem centralizada no topo
+      doc.addImage(img, 'PNG', (doc.internal.pageSize.width - imgWidth) / 2, 10, imgWidth, imgHeight);
       
-      if (clientesFiltrados.length > MAX_REGISTROS) {
-        setError(`Por favor, refine seus filtros. Limite máximo de ${MAX_REGISTROS} registros por relatório.`);
-        setLoading(false);
-        return;
-      }
+      // Adiciona título centralizado abaixo da logo
+      doc.setFontSize(16);
+      doc.text('Relatório de Clientes', doc.internal.pageSize.width / 2, imgHeight + 20, { align: 'center' });
+      
+      // Adiciona data do relatório
+      doc.setFontSize(10);
+      doc.text(
+        `Data do relatório: ${new Date().toLocaleDateString('pt-BR')}`,
+        doc.internal.pageSize.width / 2,
+        imgHeight + 30,
+        { align: 'center' }
+      );
 
-      const pdfDoc = await PDFDocument.create();
-      let page = pdfDoc.addPage([595.276, 841.890]); // A4
-      const font = await pdfDoc.embedFont('Helvetica');
-      const { width, height } = page.getSize();
+      const clientesFiltrados = filtrarClientes();
+      const dados = clientesFiltrados.map(cliente => [
+        cliente.nome,
+        calcularIdade(cliente.dataNascimento),
+        cliente.cidade,
+        cliente.data,
+        cliente.horario,
+        cliente.status
+      ]);
 
-      // Configurações de layout
-      const startX = 50;
-      const colWidth = 100;
-      let currentY = height - 50;
-      const rowHeight = 20;
-      const margin = 50;
-
-      const addHeader = (currentPage) => {
-        currentY = height - 50;
-        
-        // Título
-        currentPage.drawText('Relatório de Clientes', {
-          x: startX,
-          y: currentY,
-          size: 16,
-          font,
-        });
-        currentY -= 30;
-
-        // Data
-        currentPage.drawText(`Data: ${new Date().toLocaleDateString('pt-BR')}`, {
-          x: startX,
-          y: currentY,
-          size: 10,
-          font,
-        });
-        currentY -= 20;
-
-        // Cabeçalhos da tabela
-        let xPos = startX;
-        ['Nome', 'Idade', 'Cidade', 'Data', 'Status'].forEach(header => {
-          currentPage.drawText(header, {
-            x: xPos,
-            y: currentY,
-            size: 10,
-            font,
-          });
-          xPos += colWidth;
-        });
-        currentY -= rowHeight;
-      };
-
-      // Adiciona cabeçalho na primeira página
-      addHeader(page);
-
-      // Processa os registros
-      for (const cliente of clientesFiltrados) {
-        // Verifica se precisa de nova página
-        if (currentY <= margin) {
-          page = pdfDoc.addPage([595.276, 841.890]);
-          addHeader(page);
+      doc.autoTable({
+        head: [['Nome', 'Idade', 'Cidade', 'Data', 'Horário', 'Status']],
+        body: dados,
+        startY: imgHeight + 40,
+        theme: theme.palette.mode === 'dark' ? 'dark' : 'striped',
+        styles: {
+          fontSize: 8,
+          cellPadding: 2,
+        },
+        headStyles: {
+          fillColor: theme.palette.mode === 'dark' ? [50, 50, 50] : [220, 220, 220],
+          textColor: theme.palette.mode === 'dark' ? [255, 255, 255] : [0, 0, 0]
         }
+      });
 
-        let xPos = startX;
-
-        // Nome
-        page.drawText(cliente.nome.substring(0, 20), {
-          x: xPos,
-          y: currentY,
-          size: 9,
-          font,
-        });
-        xPos += colWidth;
-
-        // Idade
-        page.drawText(cliente.idade.toString(), {
-          x: xPos,
-          y: currentY,
-          size: 9,
-          font,
-        });
-        xPos += colWidth;
-
-        // Cidade
-        page.drawText(cliente.cidade.substring(0, 15), {
-          x: xPos,
-          y: currentY,
-          size: 9,
-          font,
-        });
-        xPos += colWidth;
-
-        // Data
-        page.drawText(new Date(cliente.data).toLocaleDateString('pt-BR'), {
-          x: xPos,
-          y: currentY,
-          size: 9,
-          font,
-        });
-        xPos += colWidth;
-
-        // Status
-        page.drawText(cliente.status, {
-          x: xPos,
-          y: currentY,
-          size: 9,
-          font,
-        });
-
-        currentY -= rowHeight;
-      }
-
-      const pdfBytes = await pdfDoc.save();
-      const blob = new Blob([pdfBytes], { type: 'application/pdf' });
-      const url = window.URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.setAttribute('download', `relatorio_${new Date().toLocaleDateString('pt-BR').replace(/\//g, '-')}.pdf`);
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-      window.URL.revokeObjectURL(url);
-      
-      setSuccess('PDF gerado com sucesso!');
-    } catch (error) {
-      console.error('Erro ao gerar PDF:', error);
-      setError('Erro ao gerar PDF: ' + error.message);
-    } finally {
-      setLoading(false);
-    }
+      doc.save('relatorio-clientes.pdf');
+    };
   };
 
-  if (loading && clientes.length === 0) {
+  if (loading) {
     return (
       <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
         <CircularProgress />
@@ -268,11 +183,11 @@ function Clientes() {
           <TextField
             select
             label="Cidade"
-            value={cidadeSelecionada}
-            onChange={(e) => setCidadeSelecionada(e.target.value)}
-            sx={{ minWidth: 200 }}
+            value={filtroCidade}
+            onChange={(e) => setFiltroCidade(e.target.value)}
+            fullWidth
           >
-            <MenuItem value="todos">Todas as cidades</MenuItem>
+            <MenuItem value="">Todas</MenuItem>
             {cidades.map((cidade) => (
               <MenuItem key={cidade} value={cidade}>
                 {cidade}
@@ -281,20 +196,11 @@ function Clientes() {
           </TextField>
 
           <TextField
-            label="Data Início"
             type="date"
-            value={dataInicio}
-            onChange={(e) => setDataInicio(e.target.value)}
-            InputLabelProps={{
-              shrink: true,
-            }}
-          />
-
-          <TextField
-            label="Data Fim"
-            type="date"
-            value={dataFim}
-            onChange={(e) => setDataFim(e.target.value)}
+            label="Data"
+            value={filtroPeriodo}
+            onChange={(e) => setFiltroPeriodo(e.target.value)}
+            fullWidth
             InputLabelProps={{
               shrink: true,
             }}
@@ -317,9 +223,9 @@ function Clientes() {
               {filtrarClientes().map((cliente) => (
                 <TableRow key={cliente.id}>
                   <TableCell>{cliente.nome}</TableCell>
-                  <TableCell>{cliente.idade} anos</TableCell>
+                  <TableCell>{calcularIdade(cliente.dataNascimento)}</TableCell>
                   <TableCell>{cliente.cidade}</TableCell>
-                  <TableCell>{new Date(cliente.data).toLocaleDateString('pt-BR')}</TableCell>
+                  <TableCell>{cliente.data}</TableCell>
                   <TableCell>{cliente.horario}</TableCell>
                   <TableCell>{cliente.status}</TableCell>
                 </TableRow>
