@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Box, Grid, Paper, Typography, CircularProgress } from '@mui/material';
-import { collection, query, where, getDocs, Timestamp } from 'firebase/firestore';
+import { collection, query, getDocs } from 'firebase/firestore';
 import { db } from '../services/firebase';
 import {
   Chart as ChartJS,
@@ -32,19 +32,47 @@ function Dashboard() {
   const [taxaOcupacao, setTaxaOcupacao] = useState(0);
   const [dadosPorCidade, setDadosPorCidade] = useState({
     labels: [],
-    datasets: []
+    datasets: [{
+      label: 'Agendamentos por Cidade',
+      data: [],
+      backgroundColor: [
+        'rgba(255, 99, 132, 0.5)',
+        'rgba(54, 162, 235, 0.5)',
+        'rgba(255, 206, 86, 0.5)',
+        'rgba(75, 192, 192, 0.5)',
+        'rgba(153, 102, 255, 0.5)'
+      ]
+    }]
   });
   const [dadosPorStatus, setDadosPorStatus] = useState({
     labels: [],
-    datasets: []
+    datasets: [{
+      label: 'Status dos Agendamentos',
+      data: [],
+      backgroundColor: [
+        'rgba(54, 162, 235, 0.5)',
+        'rgba(255, 99, 132, 0.5)',
+        'rgba(255, 206, 86, 0.5)'
+      ]
+    }]
   });
   const [dadosPorMes, setDadosPorMes] = useState({
     labels: [],
-    datasets: []
+    datasets: [{
+      label: 'Agendamentos por Mês',
+      data: [],
+      backgroundColor: 'rgba(75, 192, 192, 0.5)'
+    }]
   });
   const [taxaComparecimento, setTaxaComparecimento] = useState({
-    labels: [],
-    datasets: []
+    labels: ['Compareceram', 'Faltaram'],
+    datasets: [{
+      data: [0, 0],
+      backgroundColor: [
+        'rgba(75, 192, 192, 0.5)',
+        'rgba(255, 99, 132, 0.5)'
+      ]
+    }]
   });
 
   useEffect(() => {
@@ -88,7 +116,9 @@ function Dashboard() {
       // Dados por cidade
       const dadosCidade = {};
       agendamentos.forEach(ag => {
-        dadosCidade[ag.cidade] = (dadosCidade[ag.cidade] || 0) + 1;
+        if (ag.cidade) {
+          dadosCidade[ag.cidade] = (dadosCidade[ag.cidade] || 0) + 1;
+        }
       });
 
       setDadosPorCidade({
@@ -109,13 +139,15 @@ function Dashboard() {
       // Dados por status
       const dadosStatus = {};
       agendamentos.forEach(ag => {
-        dadosStatus[ag.status] = (dadosStatus[ag.status] || 0) + 1;
+        if (ag.status) {
+          dadosStatus[ag.status] = (dadosStatus[ag.status] || 0) + 1;
+        }
       });
 
       setDadosPorStatus({
         labels: Object.keys(dadosStatus),
         datasets: [{
-          label: 'Agendamentos por Status',
+          label: 'Status dos Agendamentos',
           data: Object.values(dadosStatus),
           backgroundColor: [
             'rgba(54, 162, 235, 0.5)',
@@ -128,9 +160,11 @@ function Dashboard() {
       // Dados por mês
       const dadosMes = {};
       agendamentos.forEach(ag => {
-        const data = new Date(ag.data);
-        const mes = data.toLocaleString('pt-BR', { month: 'long' });
-        dadosMes[mes] = (dadosMes[mes] || 0) + 1;
+        if (ag.data) {
+          const data = new Date(ag.data);
+          const mes = data.toLocaleString('pt-BR', { month: 'long' });
+          dadosMes[mes] = (dadosMes[mes] || 0) + 1;
+        }
       });
 
       setDadosPorMes({
@@ -179,7 +213,6 @@ function Dashboard() {
   return (
     <Box sx={{ flexGrow: 1, p: 3 }}>
       <Grid container spacing={3}>
-        {/* Cards de resumo */}
         <Grid item xs={12} sm={6} md={3}>
           <Paper sx={{ p: 2, textAlign: 'center' }}>
             <Typography variant="h6">Total de Agendamentos</Typography>
@@ -205,7 +238,6 @@ function Dashboard() {
           </Paper>
         </Grid>
 
-        {/* Gráficos */}
         <Grid item xs={12} md={6}>
           <Paper sx={{ p: 2 }}>
             <Typography variant="h6" gutterBottom>Agendamentos por Cidade</Typography>
