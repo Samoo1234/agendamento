@@ -55,10 +55,22 @@ function DatasDisponiveis() {
       const q = query(datasRef);
       const querySnapshot = await getDocs(q);
       
-      const dados = querySnapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      }));
+      const hoje = new Date();
+      hoje.setHours(0, 0, 0, 0); // Zera as horas para comparar apenas as datas
+
+      const dados = querySnapshot.docs
+        .map(doc => ({
+          id: doc.id,
+          ...doc.data()
+        }))
+        .filter(data => {
+          // Converte a string da data para objeto Date
+          const dataAgendamento = new Date(data.data);
+          dataAgendamento.setHours(0, 0, 0, 0);
+          
+          // Filtra apenas datas futuras ou iguais a hoje
+          return dataAgendamento >= hoje && data.status === 'disponível';
+        });
       
       // Ordenar por data
       dados.sort((a, b) => new Date(a.data) - new Date(b.data));

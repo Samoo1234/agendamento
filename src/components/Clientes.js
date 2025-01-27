@@ -96,6 +96,12 @@ function Clientes() {
     }
   };
 
+  const formatarData = (data) => {
+    if (!data) return '';
+    const [ano, mes, dia] = data.split('-');
+    return `${dia}/${mes}/${ano}`;
+  };
+
   const filtrarClientes = () => {
     return clientes.filter(cliente => {
       const passaFiltroCidade = !filtroCidade || cliente.cidade === filtroCidade;
@@ -125,7 +131,7 @@ function Clientes() {
       cliente.nome || '',
       calcularIdade(cliente.dataNascimento) || '',
       cliente.cidade || '',
-      cliente.data || '',
+      formatarData(cliente.data) || '',
       cliente.horario || '',
       cliente.status || ''
     ]);
@@ -232,7 +238,6 @@ function Clientes() {
                 <TableCell>Cidade</TableCell>
                 <TableCell sx={{ display: { xs: 'none', md: 'table-cell' } }}>Data</TableCell>
                 <TableCell>Horário</TableCell>
-                <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' } }}>Status</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
@@ -244,12 +249,9 @@ function Clientes() {
                   </TableCell>
                   <TableCell>{cliente.cidade || ''}</TableCell>
                   <TableCell sx={{ display: { xs: 'none', md: 'table-cell' } }}>
-                    {cliente.data || ''}
+                    {formatarData(cliente.data)}
                   </TableCell>
                   <TableCell>{cliente.horario || ''}</TableCell>
-                  <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' } }}>
-                    {cliente.status || ''}
-                  </TableCell>
                 </TableRow>
               ))}
             </TableBody>
