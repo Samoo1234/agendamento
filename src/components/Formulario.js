@@ -62,6 +62,7 @@ function Formulario() {
   const [cidade, setCidade] = useState('');
   const [data, setData] = useState('');
   const [horario, setHorario] = useState('');
+  const [descricao, setDescricao] = useState('');
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState('');
@@ -173,9 +174,9 @@ function Formulario() {
         cidade,
         data,
         horario,
-        status: 'pendente',
+        descricao,
         criadoEm: Timestamp.now(),
-        dataHora: new Date(data + 'T' + horario)
+        status: 'pendente'
       });
 
       setSuccess(true);
@@ -185,6 +186,7 @@ function Formulario() {
       setCidade('');
       setData('');
       setHorario('');
+      setDescricao('');
       
       // Recarregar horários disponíveis após o agendamento
       if (cidade && data) {
@@ -342,6 +344,17 @@ function Formulario() {
               </MenuItem>
             ))}
           </TextField>
+
+          <TextField
+            fullWidth
+            multiline
+            rows={4}
+            label="Descrição"
+            value={descricao}
+            onChange={(e) => setDescricao(e.target.value)}
+            margin="normal"
+            placeholder="Descreva o motivo da consulta"
+          />
 
           <Button
             type="submit"

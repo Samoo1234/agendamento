@@ -65,7 +65,8 @@ function Clientes() {
           data: data.data || '',
           cidade: data.cidade || '',
           horario: data.horario || '',
-          status: data.status || 'Pendente'
+          status: data.status || 'Pendente',
+          descricao: data.descricao || ''
         };
       });
       setClientes(clientesData);
@@ -133,11 +134,11 @@ function Clientes() {
       cliente.cidade || '',
       formatarData(cliente.data) || '',
       cliente.horario || '',
-      cliente.status || ''
+      cliente.descricao || ''
     ]);
 
     doc.autoTable({
-      head: [['Nome', 'Idade', 'Cidade', 'Data', 'Horário', 'Status']],
+      head: [['Nome', 'Idade', 'Cidade', 'Data', 'Horário', 'Descrição']],
       body: dados,
       startY: 40,
       theme: theme.palette.mode === 'dark' ? 'dark' : 'striped',
@@ -238,6 +239,7 @@ function Clientes() {
                 <TableCell>Cidade</TableCell>
                 <TableCell sx={{ display: { xs: 'none', md: 'table-cell' } }}>Data</TableCell>
                 <TableCell>Horário</TableCell>
+                <TableCell sx={{ display: { xs: 'none', md: 'table-cell' } }}>Descrição</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
@@ -252,6 +254,9 @@ function Clientes() {
                     {formatarData(cliente.data)}
                   </TableCell>
                   <TableCell>{cliente.horario || ''}</TableCell>
+                  <TableCell sx={{ display: { xs: 'none', md: 'table-cell' } }}>
+                    {cliente.descricao || ''}
+                  </TableCell>
                 </TableRow>
               ))}
             </TableBody>
