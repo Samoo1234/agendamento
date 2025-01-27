@@ -140,7 +140,11 @@ function Layout({ children }) {
             color="inherit"
             aria-label="open drawer"
             onClick={toggleDrawer}
-            sx={{ marginRight: '36px', ...(open && { display: 'none' }) }}
+            sx={{ 
+              marginRight: '36px', 
+              ...(open && { display: 'none' }),
+              color: '#ffffff' // Cor branca para o ícone do menu
+            }}
           >
             <MenuIcon />
           </IconButton>
@@ -153,7 +157,7 @@ function Layout({ children }) {
           >
             Sistema de Agendamentos
           </Typography>
-          <IconButton sx={{ ml: 1 }} onClick={colorMode.toggleColorMode} color="inherit">
+          <IconButton onClick={colorMode.toggleColorMode} sx={{ color: '#ffffff' }}>
             {theme.palette.mode === 'dark' ? <Brightness7 /> : <Brightness4 />}
           </IconButton>
         </Toolbar>
@@ -167,7 +171,7 @@ function Layout({ children }) {
             px: [1],
           }}
         >
-          <IconButton onClick={toggleDrawer}>
+          <IconButton onClick={toggleDrawer} sx={{ color: '#ffffff' }}>
             <ChevronLeftIcon />
           </IconButton>
         </Toolbar>
