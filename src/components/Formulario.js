@@ -158,17 +158,25 @@ function Formulario() {
 
     try {
       // Verificar se a data selecionada está disponível
-      const dataExiste = datasDisponiveis.some(d => d.data === data);
+      const dataExiste = datasDisponiveis.some(d => {
+        const dataDisp = new Date(d.data + 'T00:00:00');
+        const dataSel = new Date(data + 'T00:00:00');
+        return dataDisp.toLocaleDateString('en-CA') === dataSel.toLocaleDateString('en-CA');
+      });
+      
       if (!dataExiste) {
         throw new Error('Data selecionada não está disponível');
       }
 
       // Verificar se o horário ainda está disponível
+      const dataLocal = new Date(data + 'T00:00:00');
+      const dataFormatada = dataLocal.toLocaleDateString('en-CA');
+
       const agendamentosRef = collection(db, 'agendamentos');
       const q = query(
         agendamentosRef,
         where('cidade', '==', cidade),
-        where('data', '==', data),
+        where('data', '==', dataFormatada),
         where('horario', '==', horario)
       );
       const querySnapshot = await getDocs(q);
@@ -176,10 +184,6 @@ function Formulario() {
       if (!querySnapshot.empty) {
         throw new Error('Este horário já foi agendado. Por favor, escolha outro horário.');
       }
-
-      // Ajusta a data para o fuso horário local antes de salvar
-      const dataLocal = new Date(data + 'T00:00:00');
-      const dataFormatada = dataLocal.toLocaleDateString('en-CA'); // Formato YYYY-MM-DD
 
       await addDoc(collection(db, 'agendamentos'), {
         nome,
@@ -328,16 +332,20 @@ function Formulario() {
             select
             label="Data da Consulta"
             value={data}
-            onChange={(e) => setData(e.target.value)}
+            onChange={(e) => {
+              const selectedDate = new Date(e.target.value + 'T00:00:00');
+              const formattedDate = selectedDate.toLocaleDateString('en-CA');
+              setData(formattedDate);
+            }}
             margin="normal"
             required
             disabled={!cidade || datasDisponiveis.length === 0}
             helperText={!cidade ? 'Selecione uma cidade primeiro' : 
                        datasDisponiveis.length === 0 ? 'Não há datas disponíveis para esta cidade' : ''}
           >
-            {datasDisponiveis.map((data) => (
-              <MenuItem key={data.id} value={data.data}>
-                {new Date(data.data).toLocaleDateString('pt-BR')}
+            {datasDisponiveis.map((dataDisp) => (
+              <MenuItem key={dataDisp.id} value={dataDisp.data}>
+                {new Date(dataDisp.data + 'T00:00:00').toLocaleDateString('pt-BR')}
               </MenuItem>
             ))}
           </TextField>
