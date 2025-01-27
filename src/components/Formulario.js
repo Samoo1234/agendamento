@@ -250,8 +250,8 @@ function Formulario() {
           borderRadius: '8px'
         }}>
           <img 
-            src="/logo new.png" 
-            alt="Logo" 
+            src="/logo_new.png" 
+            alt="Logo"
             style={{ 
               maxWidth: '300px',
               width: '100%',
