@@ -95,9 +95,13 @@ function Agendamentos() {
   // Função para buscar horários já agendados
   const fetchHorariosAgendados = async (data, cidade) => {
     try {
+      // Ajusta a data para manter o fuso horário local
+      const dataLocal = new Date(data + 'T00:00:00');
+      const dataFormatada = dataLocal.toLocaleDateString('en-CA'); // Formato YYYY-MM-DD
+
       const q = query(
         collection(db, 'agendamentos'),
-        where('data', '==', data),
+        where('data', '==', dataFormatada),
         where('cidade', '==', cidade)
       );
       const querySnapshot = await getDocs(q);

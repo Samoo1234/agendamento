@@ -61,7 +61,7 @@ function Clientes() {
         return {
           id: doc.id,
           ...data,
-          dataNascimento: data.dataNascimento?.toDate?.() || new Date(data.dataNascimento),
+          dataNascimento: data.dataNascimento?.toDate?.() || new Date(data.dataNascimento + 'T00:00:00'),
           data: data.data || '',
           cidade: data.cidade || '',
           horario: data.horario || '',
@@ -69,7 +69,16 @@ function Clientes() {
           descricao: data.descricao || ''
         };
       });
-      setClientes(clientesData);
+
+      // Filtrar por cidade se necessário
+      let clientesFiltrados = clientesData;
+      if (filtroCidade) {
+        clientesFiltrados = clientesData.filter(cliente => 
+          cliente.cidade === filtroCidade
+        );
+      }
+
+      setClientes(clientesFiltrados);
       setLoading(false);
     } catch (error) {
       console.error('Erro ao carregar clientes:', error);
@@ -80,27 +89,23 @@ function Clientes() {
 
   const calcularIdade = (dataNascimento) => {
     if (!dataNascimento) return '';
-    try {
-      const hoje = new Date();
-      const nascimento = new Date(dataNascimento);
-      let idade = hoje.getFullYear() - nascimento.getFullYear();
-      const mes = hoje.getMonth() - nascimento.getMonth();
-      
-      if (mes < 0 || (mes === 0 && hoje.getDate() < nascimento.getDate())) {
-        idade--;
-      }
-      
-      return idade;
-    } catch (error) {
-      console.error('Erro ao calcular idade:', error);
-      return '';
+    const hoje = new Date();
+    const nascimento = new Date(dataNascimento);
+    let idade = hoje.getFullYear() - nascimento.getFullYear();
+    const mesAtual = hoje.getMonth();
+    const mesNascimento = nascimento.getMonth();
+    
+    if (mesNascimento > mesAtual || 
+        (mesNascimento === mesAtual && nascimento.getDate() > hoje.getDate())) {
+      idade--;
     }
+    return idade;
   };
 
   const formatarData = (data) => {
     if (!data) return '';
-    const [ano, mes, dia] = data.split('-');
-    return `${dia}/${mes}/${ano}`;
+    const dataObj = new Date(data + 'T00:00:00');
+    return dataObj.toLocaleDateString('pt-BR');
   };
 
   const filtrarClientes = () => {

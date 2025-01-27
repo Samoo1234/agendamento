@@ -105,11 +105,17 @@ function Formulario() {
       // Filtrar apenas datas futuras
       const hoje = new Date();
       hoje.setHours(0, 0, 0, 0);
+      const hojeFormatado = hoje.toLocaleDateString('en-CA');
       
       const datasFuturas = datas.filter(data => {
-        const dataDisponivel = new Date(data.data);
-        return dataDisponivel >= hoje;
-      }).sort((a, b) => new Date(a.data) - new Date(b.data));
+        const dataDisponivel = new Date(data.data + 'T00:00:00');
+        const dataFormatada = dataDisponivel.toLocaleDateString('en-CA');
+        return dataFormatada >= hojeFormatado;
+      }).sort((a, b) => {
+        const dataA = new Date(a.data + 'T00:00:00');
+        const dataB = new Date(b.data + 'T00:00:00');
+        return dataA - dataB;
+      });
 
       setDatasDisponiveis(datasFuturas);
     } catch (error) {
@@ -120,11 +126,15 @@ function Formulario() {
 
   const carregarHorariosDisponiveis = async (cidadeSelecionada, dataSelecionada) => {
     try {
+      // Ajusta a data para o fuso horário local
+      const dataLocal = new Date(dataSelecionada + 'T00:00:00');
+      const dataFormatada = dataLocal.toLocaleDateString('en-CA');
+
       const agendamentosRef = collection(db, 'agendamentos');
       const q = query(
         agendamentosRef,
         where('cidade', '==', cidadeSelecionada),
-        where('data', '==', dataSelecionada)
+        where('data', '==', dataFormatada)
       );
       const querySnapshot = await getDocs(q);
       
@@ -167,12 +177,16 @@ function Formulario() {
         throw new Error('Este horário já foi agendado. Por favor, escolha outro horário.');
       }
 
+      // Ajusta a data para o fuso horário local antes de salvar
+      const dataLocal = new Date(data + 'T00:00:00');
+      const dataFormatada = dataLocal.toLocaleDateString('en-CA'); // Formato YYYY-MM-DD
+
       await addDoc(collection(db, 'agendamentos'), {
         nome,
         dataNascimento,
         telefone,
         cidade,
-        data,
+        data: dataFormatada,
         horario,
         descricao,
         criadoEm: Timestamp.now(),

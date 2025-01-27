@@ -56,7 +56,8 @@ function DatasDisponiveis() {
       const querySnapshot = await getDocs(q);
       
       const hoje = new Date();
-      hoje.setHours(0, 0, 0, 0); // Zera as horas para comparar apenas as datas
+      hoje.setHours(0, 0, 0, 0);
+      const hojeFormatado = hoje.toLocaleDateString('en-CA');
 
       const dados = querySnapshot.docs
         .map(doc => ({
@@ -64,16 +65,20 @@ function DatasDisponiveis() {
           ...doc.data()
         }))
         .filter(data => {
-          // Converte a string da data para objeto Date
-          const dataAgendamento = new Date(data.data);
-          dataAgendamento.setHours(0, 0, 0, 0);
+          // Converte a string da data para objeto Date e ajusta para o fuso horário local
+          const dataAgendamento = new Date(data.data + 'T00:00:00');
+          const dataFormatada = dataAgendamento.toLocaleDateString('en-CA');
           
           // Filtra apenas datas futuras ou iguais a hoje
-          return dataAgendamento >= hoje && data.status === 'disponível';
+          return dataFormatada >= hojeFormatado && data.status === 'disponível';
         });
       
       // Ordenar por data
-      dados.sort((a, b) => new Date(a.data) - new Date(b.data));
+      dados.sort((a, b) => {
+        const dataA = new Date(a.data + 'T00:00:00');
+        const dataB = new Date(b.data + 'T00:00:00');
+        return dataA - dataB;
+      });
       
       setDatas(dados);
     } catch (error) {
@@ -85,11 +90,15 @@ function DatasDisponiveis() {
   };
 
   const verificarDataExistente = async (cidadeCheck, dataCheck) => {
+    // Ajusta a data para o fuso horário local
+    const dataLocal = new Date(dataCheck + 'T00:00:00');
+    const dataFormatada = dataLocal.toLocaleDateString('en-CA');
+
     const datasRef = collection(db, 'datas_disponiveis');
     const q = query(
       datasRef,
       where('cidade', '==', cidadeCheck),
-      where('data', '==', dataCheck)
+      where('data', '==', dataFormatada)
     );
     const querySnapshot = await getDocs(q);
     return !querySnapshot.empty;
@@ -100,6 +109,10 @@ function DatasDisponiveis() {
     setLoading(true);
     
     try {
+      // Ajusta a data para o fuso horário local antes de salvar
+      const dataLocal = new Date(data + 'T00:00:00');
+      const dataFormatada = dataLocal.toLocaleDateString('en-CA');
+
       // Verificar se a data já existe para esta cidade
       const dataExiste = await verificarDataExistente(cidade, data);
       if (dataExiste) {
@@ -108,7 +121,7 @@ function DatasDisponiveis() {
 
       await addDoc(collection(db, 'datas_disponiveis'), {
         cidade,
-        data,
+        data: dataFormatada,
         status: 'disponível',
         criadoEm: new Date()
       });
@@ -139,21 +152,28 @@ function DatasDisponiveis() {
   const handleEdit = (data) => {
     setEditingData(data);
     setCidade(data.cidade);
-    setData(data.data);
+    // Converte a data para o formato esperado pelo input type="date"
+    const dataObj = new Date(data.data + 'T00:00:00');
+    const dataFormatada = dataObj.toLocaleDateString('en-CA');
+    setData(dataFormatada);
     setOpenDialog(true);
   };
 
   const handleUpdate = async () => {
     try {
+      // Ajusta a data para o fuso horário local antes de salvar
+      const dataLocal = new Date(data + 'T00:00:00');
+      const dataFormatada = dataLocal.toLocaleDateString('en-CA');
+
       // Verificar se a data já existe para esta cidade (exceto a própria data sendo editada)
       const dataExiste = await verificarDataExistente(cidade, data);
-      if (dataExiste && editingData.data !== data) {
+      if (dataExiste && editingData.data !== dataFormatada) {
         throw new Error('Esta data já está cadastrada para esta cidade');
       }
 
       await updateDoc(doc(db, 'datas_disponiveis', editingData.id), {
         cidade,
-        data
+        data: dataFormatada
       });
       
       setSuccess('Data atualizada com sucesso!');
@@ -218,7 +238,11 @@ function DatasDisponiveis() {
               label="Data"
               type="date"
               value={data}
-              onChange={(e) => setData(e.target.value)}
+              onChange={(e) => {
+                const selectedDate = new Date(e.target.value + 'T00:00:00');
+                const formattedDate = selectedDate.toLocaleDateString('en-CA');
+                setData(formattedDate);
+              }}
               required
               InputLabelProps={{
                 shrink: true,
@@ -255,7 +279,9 @@ function DatasDisponiveis() {
                 }}
               >
                 <TableCell>{data.cidade}</TableCell>
-                <TableCell>{new Date(data.data).toLocaleDateString('pt-BR')}</TableCell>
+                <TableCell>
+                  {new Date(data.data + 'T00:00:00').toLocaleDateString('pt-BR')}
+                </TableCell>
                 <TableCell>
                   <Typography
                     component="span"
@@ -315,7 +341,11 @@ function DatasDisponiveis() {
               label="Data"
               type="date"
               value={data}
-              onChange={(e) => setData(e.target.value)}
+              onChange={(e) => {
+                const selectedDate = new Date(e.target.value + 'T00:00:00');
+                const formattedDate = selectedDate.toLocaleDateString('en-CA');
+                setData(formattedDate);
+              }}
               fullWidth
               InputLabelProps={{
                 shrink: true,

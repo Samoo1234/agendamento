@@ -94,15 +94,18 @@ function Dashboard() {
       // Agendamentos de hoje
       const hoje = new Date();
       hoje.setHours(0, 0, 0, 0);
+      const hojeFormatado = hoje.toLocaleDateString('en-CA');
+      
       const agendamentosDeHoje = agendamentos.filter(ag => {
-        const dataAg = new Date(ag.data);
-        return dataAg.toDateString() === hoje.toDateString();
+        const dataAg = new Date(ag.data + 'T00:00:00');
+        const dataAgFormatada = dataAg.toLocaleDateString('en-CA');
+        return dataAgFormatada === hojeFormatado;
       });
       setAgendamentosHoje(agendamentosDeHoje.length);
 
       // Próximos agendamentos
       const proximosAg = agendamentos.filter(ag => {
-        const dataAg = new Date(ag.data);
+        const dataAg = new Date(ag.data + 'T00:00:00');
         return dataAg > hoje;
       });
       setProximosAgendamentos(proximosAg.length);
@@ -161,8 +164,8 @@ function Dashboard() {
       const dadosMes = {};
       agendamentos.forEach(ag => {
         if (ag.data) {
-          const data = new Date(ag.data);
-          const mes = data.toLocaleString('pt-BR', { month: 'long' });
+          const dataAg = new Date(ag.data + 'T00:00:00');
+          const mes = dataAg.toLocaleString('pt-BR', { month: 'long' });
           dadosMes[mes] = (dadosMes[mes] || 0) + 1;
         }
       });
