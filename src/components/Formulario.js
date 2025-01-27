@@ -207,10 +207,13 @@ function Formulario() {
               color="primary" 
               onClick={() => navigate('/login')}
               sx={{ 
-                backgroundColor: 'rgba(25, 118, 210, 0.1)',
+                backgroundColor: '#e6e6ff', 
+                color: '#000033', 
                 '&:hover': {
-                  backgroundColor: 'rgba(25, 118, 210, 0.2)',
-                }
+                  backgroundColor: '#ccccff', 
+                  color: '#000066', 
+                },
+                transition: 'all 0.3s ease' 
               }}
             >
               <SecurityIcon />
@@ -218,7 +221,14 @@ function Formulario() {
           </Tooltip>
         </Box>
 
-        <Box sx={{ display: 'flex', justifyContent: 'center', mb: 4 }}>
+        <Box sx={{ 
+          display: 'flex', 
+          justifyContent: 'center', 
+          mb: 4, 
+          backgroundColor: '#000033', 
+          padding: '20px',
+          borderRadius: '8px'
+        }}>
           <img 
             src="/logo new.png" 
             alt="Logo" 
@@ -226,7 +236,7 @@ function Formulario() {
               maxWidth: '300px',
               width: '100%',
               height: 'auto',
-              marginBottom: '20px'
+              marginBottom: '0px'
             }} 
           />
         </Box>
