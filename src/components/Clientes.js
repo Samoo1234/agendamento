@@ -115,7 +115,7 @@ function Clientes() {
     
     // Adiciona título centralizado
     doc.setFontSize(16);
-    doc.text('Relatório de Clientes', doc.internal.pageSize.width / 2, 20, { align: 'center' });
+    doc.text('Agendamentos', doc.internal.pageSize.width / 2, 20, { align: 'center' });
     
     // Adiciona data do relatório
     doc.setFontSize(10);
