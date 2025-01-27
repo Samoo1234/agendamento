@@ -56,11 +56,30 @@ const Drawer = styled(MuiDrawer, { shouldForwardProp: (prop) => prop !== 'open' 
       position: 'relative',
       whiteSpace: 'nowrap',
       width: drawerWidth,
+      backgroundColor: '#000033', // Cor de fundo azul escuro
+      color: '#ffffff', // Texto em branco
       transition: theme.transitions.create('width', {
         easing: theme.transitions.easing.sharp,
         duration: theme.transitions.duration.enteringScreen,
       }),
       boxSizing: 'border-box',
+      '& .MuiListItemIcon-root': { // Cor dos ícones
+        color: '#ffffff'
+      },
+      '& .MuiDivider-root': { // Cor do divisor
+        borderColor: 'rgba(255, 255, 255, 0.2)'
+      },
+      '& .MuiListItemButton-root': {
+        '&:hover': {
+          backgroundColor: 'rgba(255, 255, 255, 0.1)', // Efeito hover sutil
+        },
+        '&.Mui-selected': {
+          backgroundColor: 'rgba(255, 255, 255, 0.15)', // Item selecionado
+          '&:hover': {
+            backgroundColor: 'rgba(255, 255, 255, 0.2)',
+          }
+        }
+      },
       ...(!open && {
         overflowX: 'hidden',
         transition: theme.transitions.create('width', {
