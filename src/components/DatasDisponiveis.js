@@ -209,56 +209,74 @@ function DatasDisponiveis() {
   }
 
   return (
-    <Box sx={{ p: 3 }}>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 4 }}>
-        <Typography variant="h4" component="h1">
-          Datas Disponíveis
-        </Typography>
+    <Box sx={{ p: 2 }}>
+      <Typography variant="h6" component="h2" sx={{ mb: 2 }}>
+        Datas Disponíveis
+      </Typography>
+
+      <Box sx={{ 
+        display: 'flex', 
+        flexDirection: { xs: 'column', sm: 'row' }, 
+        gap: 2,
+        mb: 3 
+      }}>
+        <TextField
+          select
+          label="Cidade"
+          value={cidade}
+          onChange={(e) => setCidade(e.target.value)}
+          required
+          size="small"
+          sx={{ 
+            minWidth: { xs: '100%', sm: '200px' },
+            '& .MuiInputBase-root': {
+              height: '40px'
+            }
+          }}
+        >
+          {cidades.map((option) => (
+            <MenuItem key={option} value={option}>
+              {option}
+            </MenuItem>
+          ))}
+        </TextField>
+
+        <TextField
+          type="date"
+          label="Data"
+          value={data}
+          onChange={(e) => setData(e.target.value)}
+          required
+          size="small"
+          InputLabelProps={{
+            shrink: true,
+          }}
+          inputProps={{
+            style: { height: '7px' }
+          }}
+          sx={{ 
+            minWidth: { xs: '100%', sm: '200px' },
+            '& .MuiInputBase-root': {
+              height: '40px'
+            }
+          }}
+        />
+
+        <Button
+          variant="contained"
+          onClick={handleSubmit}
+          sx={{
+            height: '40px',
+            minWidth: { xs: '100%', sm: 'auto' },
+            bgcolor: '#000033',
+            '&:hover': {
+              bgcolor: '#000066'
+            }
+          }}
+        >
+          CADASTRAR DATA
+        </Button>
       </Box>
-
-      <Paper sx={{ p: 3, mb: 3 }}>
-        <form onSubmit={handleSubmit}>
-          <Box sx={{ display: 'flex', gap: 2 }}>
-            <TextField
-              select
-              label="Cidade"
-              value={cidade}
-              onChange={(e) => setCidade(e.target.value)}
-              required
-              sx={{ minWidth: 200 }}
-            >
-              {cidades.map((option) => (
-                <MenuItem key={option} value={option}>
-                  {option}
-                </MenuItem>
-              ))}
-            </TextField>
-
-            <TextField
-              label="Data"
-              type="date"
-              value={data}
-              onChange={(e) => {
-                const selectedDate = new Date(e.target.value + 'T00:00:00');
-                const formattedDate = selectedDate.toLocaleDateString('en-CA');
-                setData(formattedDate);
-              }}
-              required
-              InputLabelProps={{
-                shrink: true,
-              }}
-            />
-
-            <Button
-              type="submit"
-              variant="contained"
-              disabled={loading}
-            >
-              {loading ? <CircularProgress size={24} /> : 'Cadastrar Data'}
-            </Button>
-          </Box>
-        </form>
-      </Paper>
 
       <TableContainer component={Paper}>
         <Table>
@@ -341,11 +359,7 @@ function DatasDisponiveis() {
               label="Data"
               type="date"
               value={data}
-              onChange={(e) => {
-                const selectedDate = new Date(e.target.value + 'T00:00:00');
-                const formattedDate = selectedDate.toLocaleDateString('en-CA');
-                setData(formattedDate);
-              }}
+              onChange={(e) => setData(e.target.value)}
               fullWidth
               InputLabelProps={{
                 shrink: true,

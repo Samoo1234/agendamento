@@ -28,6 +28,11 @@ import { collection, query, getDocs } from 'firebase/firestore';
 import { db } from '../services/firebase';
 import { jsPDF } from 'jspdf';
 import 'jspdf-autotable';
+import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
+import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
+import { MobileDatePicker } from '@mui/x-date-pickers/MobileDatePicker';
+import dayjs from 'dayjs';
+import 'dayjs/locale/pt-br';
 
 const cidades = [
   'Mantena',
@@ -44,6 +49,7 @@ function Clientes() {
   const [clientes, setClientes] = useState([]);
   const [filtroCidade, setFiltroCidade] = useState('');
   const [filtroPeriodo, setFiltroPeriodo] = useState('');
+  const [selectedDate, setSelectedDate] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
@@ -160,6 +166,15 @@ function Clientes() {
     doc.save('relatorio-clientes.pdf');
   };
 
+  const handleDateChange = (newDate) => {
+    setSelectedDate(newDate);
+    if (newDate) {
+      setFiltroPeriodo(dayjs(newDate).format('YYYY-MM-DD'));
+    } else {
+      setFiltroPeriodo('');
+    }
+  };
+
   if (loading) {
     return (
       <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
@@ -173,11 +188,7 @@ function Clientes() {
       <Box sx={{ 
         display: 'flex', 
         flexDirection: 'column',
-        gap: 2,
-        '& .MuiTextField-root': {
-          minWidth: { xs: '100%', sm: 200 },
-          maxWidth: { xs: '100%', sm: 300 }
-        }
+        gap: 2
       }}>
         <Box sx={{ 
           display: 'flex', 
@@ -193,6 +204,10 @@ function Clientes() {
             variant="outlined"
             size="small"
             required
+            sx={{
+              minWidth: { xs: '100%', sm: 200 },
+              maxWidth: { xs: '100%', sm: 300 }
+            }}
           >
             <MenuItem value="">Todas</MenuItem>
             {cidades.map((cidade) => (
@@ -201,17 +216,34 @@ function Clientes() {
               </MenuItem>
             ))}
           </TextField>
-          <TextField
-            type="date"
-            label="Data"
-            value={filtroPeriodo}
-            onChange={(e) => setFiltroPeriodo(e.target.value)}
-            variant="outlined"
-            size="small"
-            InputLabelProps={{
-              shrink: true,
-            }}
-          />
+
+          <LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale="pt-br">
+            <MobileDatePicker
+              label="Data"
+              value={selectedDate}
+              onChange={handleDateChange}
+              slotProps={{
+                textField: {
+                  variant: "outlined",
+                  size: "small",
+                  fullWidth: true,
+                  sx: {
+                    minWidth: { xs: '100%', sm: 200 },
+                    maxWidth: { xs: '100%', sm: 300 }
+                  }
+                },
+                dialog: {
+                  sx: {
+                    '& .MuiPickersDay-root': {
+                      fontSize: '1rem',
+                      width: 36,
+                      height: 36,
+                    }
+                  }
+                }
+              }}
+            />
+          </LocalizationProvider>
         </Box>
 
         <TableContainer 
