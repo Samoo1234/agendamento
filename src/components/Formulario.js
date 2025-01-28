@@ -249,15 +249,18 @@ function Formulario() {
           padding: '20px',
           borderRadius: '8px'
         }}>
-          <img 
-            src="/logo_new.png" 
+          <Box
+            component="img"
+            src="/logo_new.png"
             alt="Logo"
-            style={{ 
-              maxWidth: '300px',
+            sx={{
+              maxWidth: { xs: '200px', sm: '250px', md: '300px' },
               width: '100%',
               height: 'auto',
-              marginBottom: '0px'
-            }} 
+              marginBottom: '0px',
+              objectFit: 'contain',
+              display: 'block'
+            }}
           />
         </Box>
 

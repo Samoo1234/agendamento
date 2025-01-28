@@ -32,6 +32,9 @@ import { auth } from '../services/firebase';
 
 const drawerWidth = 240;
 
+// Drawer móvel mais compacto
+const mobileDrawerWidth = 200;
+
 const AppBar = styled(MuiAppBar, {
   shouldForwardProp: (prop) => prop !== 'open',
 })(({ theme, open }) => ({
@@ -41,9 +44,17 @@ const AppBar = styled(MuiAppBar, {
     easing: theme.transitions.easing.sharp,
     duration: theme.transitions.duration.leavingScreen,
   }),
+  [theme.breakpoints.down('sm')]: {
+    width: '100%',
+    marginLeft: 0,
+  },
   ...(open && {
     marginLeft: drawerWidth,
     width: `calc(100% - ${drawerWidth}px)`,
+    [theme.breakpoints.down('sm')]: {
+      width: '100%',
+      marginLeft: 0,
+    },
     transition: theme.transitions.create(['width', 'margin'], {
       easing: theme.transitions.easing.sharp,
       duration: theme.transitions.duration.enteringScreen,
@@ -64,6 +75,9 @@ const Drawer = styled(MuiDrawer, { shouldForwardProp: (prop) => prop !== 'open' 
         duration: theme.transitions.duration.enteringScreen,
       }),
       boxSizing: 'border-box',
+      [theme.breakpoints.down('sm')]: {
+        width: mobileDrawerWidth,
+      },
       '& .MuiListItemIcon-root': { // Cor dos ícones
         color: '#ffffff'
       },
@@ -88,8 +102,9 @@ const Drawer = styled(MuiDrawer, { shouldForwardProp: (prop) => prop !== 'open' 
           duration: theme.transitions.duration.leavingScreen,
         }),
         width: theme.spacing(7),
-        [theme.breakpoints.up('sm')]: {
-          width: theme.spacing(9),
+        [theme.breakpoints.down('sm')]: {
+          width: theme.spacing(0),
+          display: 'none',
         },
       }),
     },
@@ -104,18 +119,13 @@ const menuItems = [
 ];
 
 function Layout({ children }) {
-  const [open, setOpen] = useState(true);
+  const [open, setOpen] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
+  const { currentUser } = useAuth();
   const theme = useTheme();
   const colorMode = React.useContext(ColorModeContext);
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
-
-  React.useEffect(() => {
-    if (isMobile) {
-      setOpen(false);
-    }
-  }, [isMobile]);
 
   const toggleDrawer = () => {
     setOpen(!open);
@@ -140,13 +150,9 @@ function Layout({ children }) {
             color="inherit"
             aria-label="open drawer"
             onClick={toggleDrawer}
-            sx={{ 
-              marginRight: '36px', 
-              ...(open && { display: 'none' }),
-              color: '#ffffff' // Cor branca para o ícone do menu
-            }}
+            sx={{ marginRight: '36px' }}
           >
-            <MenuIcon />
+            {open ? <ChevronLeftIcon /> : <MenuIcon />}
           </IconButton>
           <Typography
             component="h1"
@@ -155,50 +161,111 @@ function Layout({ children }) {
             noWrap
             sx={{ flexGrow: 1 }}
           >
-            Sistema de Agendamentos
+            Sistema de Agendamento
           </Typography>
           <IconButton onClick={colorMode.toggleColorMode} sx={{ color: '#ffffff' }}>
             {theme.palette.mode === 'dark' ? <Brightness7 /> : <Brightness4 />}
           </IconButton>
         </Toolbar>
       </AppBar>
-      <Drawer variant="permanent" open={open}>
-        <Toolbar
+
+      {isMobile ? (
+        <MuiDrawer
+          variant="temporary"
+          open={open}
+          onClose={toggleDrawer}
+          ModalProps={{
+            keepMounted: true, // Melhor desempenho em mobile
+          }}
           sx={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'flex-end',
-            px: [1],
+            '& .MuiDrawer-paper': {
+              width: mobileDrawerWidth,
+              backgroundColor: '#000033',
+              color: 'white',
+              '& .MuiListItemIcon-root': {
+                color: '#ffffff'
+              }
+            },
           }}
         >
-          <IconButton onClick={toggleDrawer} sx={{ color: '#ffffff' }}>
-            <ChevronLeftIcon />
-          </IconButton>
-        </Toolbar>
-        <Divider />
-        <List>
-          {menuItems.map((item) => (
-            <ListItem key={item.text} disablePadding>
+          <Toolbar sx={{ display: 'flex', justifyContent: 'flex-end', px: [1] }}>
+            <IconButton onClick={toggleDrawer} sx={{ color: 'white' }}>
+              <ChevronLeftIcon />
+            </IconButton>
+          </Toolbar>
+          <Divider sx={{ bgcolor: 'rgba(255,255,255,0.12)' }} />
+          {/* Menu Items */}
+          <List component="nav">
+            {menuItems.map((item) => (
               <ListItemButton
-                component={Link}
-                to={item.path}
+                key={item.path}
+                onClick={() => {
+                  navigate(item.path);
+                  if (isMobile) toggleDrawer();
+                }}
                 selected={location.pathname === item.path}
+                sx={{
+                  '&.Mui-selected': {
+                    bgcolor: 'rgba(255,255,255,0.08)',
+                  },
+                  '&:hover': {
+                    bgcolor: 'rgba(255,255,255,0.12)',
+                  }
+                }}
               >
-                <ListItemIcon>{item.icon}</ListItemIcon>
+                <ListItemIcon sx={{ color: 'white' }}>
+                  {item.icon}
+                </ListItemIcon>
                 <ListItemText primary={item.text} />
               </ListItemButton>
-            </ListItem>
-          ))}
-          <ListItem disablePadding>
+            ))}
             <ListItemButton onClick={handleLogout}>
-              <ListItemIcon>
+              <ListItemIcon sx={{ color: 'white' }}>
                 <LogoutIcon />
               </ListItemIcon>
               <ListItemText primary="Sair" />
             </ListItemButton>
-          </ListItem>
-        </List>
-      </Drawer>
+          </List>
+        </MuiDrawer>
+      ) : (
+        <Drawer variant="permanent" open={open}>
+          <Toolbar
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'flex-end',
+              px: [1],
+            }}
+          >
+            <IconButton onClick={toggleDrawer} sx={{ color: '#ffffff' }}>
+              <ChevronLeftIcon />
+            </IconButton>
+          </Toolbar>
+          <Divider />
+          <List>
+            {menuItems.map((item) => (
+              <ListItem key={item.text} disablePadding>
+                <ListItemButton
+                  component={Link}
+                  to={item.path}
+                  selected={location.pathname === item.path}
+                >
+                  <ListItemIcon>{item.icon}</ListItemIcon>
+                  <ListItemText primary={item.text} />
+                </ListItemButton>
+              </ListItem>
+            ))}
+            <ListItem disablePadding>
+              <ListItemButton onClick={handleLogout}>
+                <ListItemIcon>
+                  <LogoutIcon />
+                </ListItemIcon>
+                <ListItemText primary="Sair" />
+              </ListItemButton>
+            </ListItem>
+          </List>
+        </Drawer>
+      )}
       <Box
         component="main"
         sx={{

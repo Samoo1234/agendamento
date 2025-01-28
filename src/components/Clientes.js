@@ -169,51 +169,30 @@ function Clientes() {
   }
 
   return (
-    <Box sx={{ p: { xs: 1, sm: 2, md: 3 } }}>
+    <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
       <Box sx={{ 
         display: 'flex', 
-        flexDirection: { xs: 'column', sm: 'row' }, 
-        justifyContent: 'space-between', 
-        alignItems: { xs: 'stretch', sm: 'center' }, 
-        mb: 4,
-        gap: 2
+        flexDirection: 'column',
+        gap: 2,
+        '& .MuiTextField-root': {
+          minWidth: { xs: '100%', sm: 200 },
+          maxWidth: { xs: '100%', sm: 300 }
+        }
       }}>
-        <Typography variant="h4" component="h1" sx={{ fontSize: { xs: '1.5rem', sm: '2rem' } }}>
-          Clientes
-        </Typography>
-        <Box sx={{ display: 'flex', gap: 1 }}>
-          <IconButton
-            sx={{ opacity: 0.7 }}
-            onClick={colorMode.toggleColorMode}
-            color="primary"
-          >
-            {theme.palette.mode === 'dark' ? <Brightness7Icon /> : <Brightness4Icon />}
-          </IconButton>
-          <Button
-            variant="contained"
-            startIcon={<PictureAsPdfIcon />}
-            onClick={gerarPDF}
-            disabled={loading}
-            fullWidth={isMobile}
-          >
-            Gerar PDF
-          </Button>
-        </Box>
-      </Box>
-
-      <Paper sx={{ p: { xs: 1, sm: 2, md: 3 }, mb: 3 }}>
         <Box sx={{ 
           display: 'flex', 
-          flexDirection: { xs: 'column', sm: 'row' }, 
-          gap: 2, 
-          mb: 3 
+          flexDirection: { xs: 'column', sm: 'row' },
+          gap: 2,
+          alignItems: { xs: 'stretch', sm: 'center' }
         }}>
           <TextField
             select
             label="Cidade"
             value={filtroCidade}
             onChange={(e) => setFiltroCidade(e.target.value)}
-            fullWidth
+            variant="outlined"
+            size="small"
+            required
           >
             <MenuItem value="">Todas</MenuItem>
             {cidades.map((cidade) => (
@@ -222,53 +201,67 @@ function Clientes() {
               </MenuItem>
             ))}
           </TextField>
-
           <TextField
             type="date"
             label="Data"
             value={filtroPeriodo}
             onChange={(e) => setFiltroPeriodo(e.target.value)}
-            fullWidth
+            variant="outlined"
+            size="small"
             InputLabelProps={{
               shrink: true,
             }}
           />
         </Box>
 
-        <TableContainer>
-          <Table>
+        <TableContainer 
+          component={Paper}
+          sx={{
+            overflowX: 'auto',
+            '& .MuiTableCell-root': {
+              px: { xs: 1, sm: 2 },
+              py: { xs: 1, sm: 2 },
+              fontSize: { xs: '0.8rem', sm: '1rem' }
+            }
+          }}
+        >
+          <Table size="small">
             <TableHead>
-              <TableRow>
-                <TableCell>Nome</TableCell>
-                <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' } }}>Idade</TableCell>
-                <TableCell>Cidade</TableCell>
-                <TableCell sx={{ display: { xs: 'none', md: 'table-cell' } }}>Data</TableCell>
-                <TableCell>Horário</TableCell>
-                <TableCell sx={{ display: { xs: 'none', md: 'table-cell' } }}>Descrição</TableCell>
+              <TableRow sx={{ bgcolor: '#000033' }}>
+                <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>Nome</TableCell>
+                <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>Idade</TableCell>
+                <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>Cidade</TableCell>
+                <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>Data</TableCell>
+                <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>Horário</TableCell>
+                <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>Descrição</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
               {filtrarClientes().map((cliente) => (
                 <TableRow key={cliente.id}>
                   <TableCell>{cliente.nome || ''}</TableCell>
-                  <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' } }}>
-                    {calcularIdade(cliente.dataNascimento)}
-                  </TableCell>
+                  <TableCell>{calcularIdade(cliente.dataNascimento)}</TableCell>
                   <TableCell>{cliente.cidade || ''}</TableCell>
-                  <TableCell sx={{ display: { xs: 'none', md: 'table-cell' } }}>
-                    {formatarData(cliente.data)}
-                  </TableCell>
+                  <TableCell>{formatarData(cliente.data)}</TableCell>
                   <TableCell>{cliente.horario || ''}</TableCell>
-                  <TableCell sx={{ display: { xs: 'none', md: 'table-cell' } }}>
-                    {cliente.descricao || ''}
-                  </TableCell>
+                  <TableCell>{cliente.descricao || ''}</TableCell>
                 </TableRow>
               ))}
             </TableBody>
           </Table>
         </TableContainer>
-      </Paper>
-
+      </Box>
+      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', mt: 4 }}>
+        <Button
+          variant="contained"
+          startIcon={<PictureAsPdfIcon />}
+          onClick={gerarPDF}
+          disabled={loading}
+          fullWidth={isMobile}
+        >
+          Gerar PDF
+        </Button>
+      </Box>
       <Snackbar 
         open={!!error} 
         autoHideDuration={6000} 
@@ -290,7 +283,7 @@ function Clientes() {
           {success}
         </Alert>
       </Snackbar>
-    </Box>
+    </Container>
   );
 }
 
