@@ -58,7 +58,9 @@ function Formulario() {
   const navigate = useNavigate();
   const [nome, setNome] = useState('');
   const [dataNascimento, setDataNascimento] = useState('');
+  const [dataNascimentoError, setDataNascimentoError] = useState('');
   const [telefone, setTelefone] = useState('');
+  const [telefoneError, setTelefoneError] = useState('');
   const [cidade, setCidade] = useState('');
   const [data, setData] = useState('');
   const [horario, setHorario] = useState('');
@@ -151,8 +153,91 @@ function Formulario() {
     }
   };
 
+  const formatarTelefone = (valor) => {
+    // Remove tudo que não é número
+    const numeroLimpo = valor.replace(/\D/g, '');
+    
+    // Aplica a máscara
+    let numeroFormatado = numeroLimpo;
+    if (numeroLimpo.length <= 11) {
+      numeroFormatado = numeroLimpo
+        .replace(/^(\d{2})/, '($1)')
+        .replace(/(\d{5})(\d)/, '$1-$2');
+    }
+    
+    return numeroFormatado;
+  };
+
+  const validarTelefone = (telefone) => {
+    const numeroLimpo = telefone.replace(/\D/g, '');
+    if (numeroLimpo.length !== 11) {
+      setTelefoneError('Telefone deve ter 11 números (DDD + número)');
+      return false;
+    }
+    setTelefoneError('');
+    return true;
+  };
+
+  const handleTelefoneChange = (e) => {
+    const valorFormatado = formatarTelefone(e.target.value);
+    setTelefone(valorFormatado);
+    validarTelefone(valorFormatado);
+  };
+
+  const validarDataNascimento = (data) => {
+    if (!data) return false;
+
+    const dataNasc = new Date(data);
+    const hoje = new Date();
+    const anoMinimo = 1900;
+    
+    // Verifica se é uma data válida
+    if (isNaN(dataNasc.getTime())) {
+      setDataNascimentoError('Data inválida');
+      return false;
+    }
+
+    // Verifica se a data é futura
+    if (dataNasc > hoje) {
+      setDataNascimentoError('A data não pode ser futura');
+      return false;
+    }
+
+    // Verifica se o ano é menor que 1900
+    if (dataNasc.getFullYear() < anoMinimo) {
+      setDataNascimentoError('O ano não pode ser menor que 1900');
+      return false;
+    }
+
+    // Verifica se o ano tem mais de 4 dígitos
+    if (data.split('-')[0].length > 4) {
+      setDataNascimentoError('O ano deve ter 4 dígitos');
+      return false;
+    }
+
+    setDataNascimentoError('');
+    return true;
+  };
+
+  const handleDataNascimentoChange = (e) => {
+    const novaData = e.target.value;
+    setDataNascimento(novaData);
+    validarDataNascimento(novaData);
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
+    // Validação da data de nascimento antes de enviar
+    if (!validarDataNascimento(dataNascimento)) {
+      return;
+    }
+
+    // Validação do telefone antes de enviar
+    if (!validarTelefone(telefone)) {
+      return;
+    }
+
     setLoading(true);
     setError('');
 
@@ -293,11 +378,17 @@ function Formulario() {
             label="Data de Nascimento"
             type="date"
             value={dataNascimento}
-            onChange={(e) => setDataNascimento(e.target.value)}
+            onChange={handleDataNascimentoChange}
             margin="normal"
             required
+            error={!!dataNascimentoError}
+            helperText={dataNascimentoError}
             InputLabelProps={{
               shrink: true,
+            }}
+            inputProps={{
+              max: new Date().toISOString().split('T')[0], // Data máxima é hoje
+              min: "1900-01-01" // Data mínima é 01/01/1900
             }}
           />
 
@@ -305,16 +396,21 @@ function Formulario() {
             fullWidth
             label="Telefone"
             value={telefone}
-            onChange={(e) => setTelefone(e.target.value)}
+            onChange={handleTelefoneChange}
             margin="normal"
             required
-            placeholder="(00) 00000-0000"
+            placeholder="(00)00000-0000"
+            error={!!telefoneError}
+            helperText={telefoneError}
+            inputProps={{
+              maxLength: 14
+            }}
           />
 
           <TextField
             fullWidth
             select
-            label="Cidade"
+            label="Cidade da consulta"
             value={cidade}
             onChange={(e) => {
               setCidade(e.target.value);
@@ -374,7 +470,7 @@ function Formulario() {
             fullWidth
             multiline
             rows={4}
-            label="Descrição"
+            label="Informações adicionais"
             value={descricao}
             onChange={(e) => setDescricao(e.target.value)}
             margin="normal"

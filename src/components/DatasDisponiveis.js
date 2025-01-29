@@ -104,11 +104,55 @@ function DatasDisponiveis() {
     return !querySnapshot.empty;
   };
 
+  const validarData = (dataStr) => {
+    if (!dataStr) {
+      setError('Por favor, selecione uma data');
+      return false;
+    }
+
+    const dataLocal = new Date(dataStr + 'T00:00:00');
+    const hoje = new Date();
+    hoje.setHours(0, 0, 0, 0);
+
+    // Verifica se é uma data válida
+    if (isNaN(dataLocal.getTime())) {
+      setError('Data inválida');
+      return false;
+    }
+
+    // Verifica se a data é anterior a hoje
+    if (dataLocal < hoje) {
+      setError('Não é possível cadastrar datas passadas');
+      return false;
+    }
+
+    // Verifica se a data está muito no futuro (por exemplo, mais de 1 ano)
+    const umAnoDepois = new Date();
+    umAnoDepois.setFullYear(umAnoDepois.getFullYear() + 1);
+    if (dataLocal > umAnoDepois) {
+      setError('Data muito distante. Por favor, selecione uma data dentro do próximo ano');
+      return false;
+    }
+
+    return true;
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
     
     try {
+      // Validação da cidade
+      if (!cidade.trim()) {
+        throw new Error('Por favor, selecione uma cidade');
+      }
+
+      // Validação da data
+      if (!validarData(data)) {
+        setLoading(false);
+        return;
+      }
+
       // Ajusta a data para o fuso horário local antes de salvar
       const dataLocal = new Date(data + 'T00:00:00');
       const dataFormatada = dataLocal.toLocaleDateString('en-CA');
@@ -252,6 +296,8 @@ function DatasDisponiveis() {
             shrink: true,
           }}
           inputProps={{
+            min: new Date().toISOString().split('T')[0], // Data mínima é hoje
+            max: new Date(new Date().setFullYear(new Date().getFullYear() + 1)).toISOString().split('T')[0], // Data máxima é 1 ano no futuro
             style: { height: '7px' }
           }}
           sx={{ 

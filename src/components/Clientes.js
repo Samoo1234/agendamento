@@ -24,7 +24,7 @@ import PictureAsPdfIcon from '@mui/icons-material/PictureAsPdf';
 import Brightness4Icon from '@mui/icons-material/Brightness4';
 import Brightness7Icon from '@mui/icons-material/Brightness7';
 import { ColorModeContext } from '../App';
-import { collection, query, getDocs } from 'firebase/firestore';
+import { collection, query, getDocs, where } from 'firebase/firestore';
 import { db } from '../services/firebase';
 import { jsPDF } from 'jspdf';
 import 'jspdf-autotable';
@@ -53,10 +53,20 @@ function Clientes() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [datasDisponiveis, setDatasDisponiveis] = useState([]);
 
   useEffect(() => {
     carregarClientes();
-  }, []);
+  }, [filtroCidade, filtroPeriodo]);
+
+  useEffect(() => {
+    if (filtroCidade) {
+      carregarDatasDisponiveis();
+    } else {
+      setDatasDisponiveis([]);
+      setFiltroPeriodo('');
+    }
+  }, [filtroCidade]);
 
   const carregarClientes = async () => {
     try {
@@ -90,6 +100,45 @@ function Clientes() {
       console.error('Erro ao carregar clientes:', error);
       setError('Erro ao carregar clientes');
       setLoading(false);
+    }
+  };
+
+  const carregarDatasDisponiveis = async () => {
+    try {
+      const datasRef = collection(db, 'datas_disponiveis');
+      const q = query(
+        datasRef,
+        where('cidade', '==', filtroCidade),
+        where('status', '==', 'disponível')
+      );
+      const querySnapshot = await getDocs(q);
+      
+      const hoje = new Date();
+      hoje.setHours(0, 0, 0, 0);
+      const hojeFormatado = hoje.toLocaleDateString('en-CA');
+
+      const datas = querySnapshot.docs
+        .map(doc => ({
+          id: doc.id,
+          ...doc.data()
+        }))
+        .filter(data => {
+          const dataDisponivel = new Date(data.data + 'T00:00:00');
+          const dataFormatada = dataDisponivel.toLocaleDateString('en-CA');
+          return dataFormatada >= hojeFormatado;
+        })
+        .sort((a, b) => {
+          const dataA = new Date(a.data + 'T00:00:00');
+          const dataB = new Date(b.data + 'T00:00:00');
+          return dataA - dataB;
+        });
+
+      setDatasDisponiveis(datas);
+      // Limpa a data selecionada quando mudar de cidade
+      setFiltroPeriodo('');
+    } catch (error) {
+      console.error('Erro ao carregar datas:', error);
+      setError('Erro ao carregar datas disponíveis');
     }
   };
 
@@ -194,7 +243,8 @@ function Clientes() {
           display: 'flex', 
           flexDirection: { xs: 'column', sm: 'row' },
           gap: 2,
-          alignItems: { xs: 'stretch', sm: 'center' }
+          alignItems: { xs: 'stretch', sm: 'center' },
+          mb: 3
         }}>
           <TextField
             select
@@ -203,47 +253,40 @@ function Clientes() {
             onChange={(e) => setFiltroCidade(e.target.value)}
             variant="outlined"
             size="small"
-            required
-            sx={{
-              minWidth: { xs: '100%', sm: 200 },
-              maxWidth: { xs: '100%', sm: 300 }
+            sx={{ 
+              minWidth: { xs: '100%', sm: '200px' },
+              flex: { sm: 1 }
             }}
           >
-            <MenuItem value="">Todas</MenuItem>
-            {cidades.map((cidade) => (
-              <MenuItem key={cidade} value={cidade}>
-                {cidade}
+            <MenuItem value="">Todas as cidades</MenuItem>
+            {cidades.map((option) => (
+              <MenuItem key={option} value={option}>
+                {option}
               </MenuItem>
             ))}
           </TextField>
 
-          <LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale="pt-br">
-            <MobileDatePicker
-              label="Data"
-              value={selectedDate}
-              onChange={handleDateChange}
-              slotProps={{
-                textField: {
-                  variant: "outlined",
-                  size: "small",
-                  fullWidth: true,
-                  sx: {
-                    minWidth: { xs: '100%', sm: 200 },
-                    maxWidth: { xs: '100%', sm: 300 }
-                  }
-                },
-                dialog: {
-                  sx: {
-                    '& .MuiPickersDay-root': {
-                      fontSize: '1rem',
-                      width: 36,
-                      height: 36,
-                    }
-                  }
-                }
-              }}
-            />
-          </LocalizationProvider>
+          <TextField
+            select
+            label="Data"
+            value={filtroPeriodo}
+            onChange={(e) => setFiltroPeriodo(e.target.value)}
+            disabled={!filtroCidade}
+            size="small"
+            sx={{ 
+              minWidth: { xs: '100%', sm: '200px' },
+              flex: { sm: 1 }
+            }}
+            helperText={!filtroCidade ? "Selecione uma cidade primeiro" : 
+                       datasDisponiveis.length === 0 ? "Não há datas disponíveis para esta cidade" : ""}
+          >
+            <MenuItem value="">Todas as datas</MenuItem>
+            {datasDisponiveis.map((data) => (
+              <MenuItem key={data.id} value={data.data}>
+                {new Date(data.data + 'T00:00:00').toLocaleDateString('pt-BR')}
+              </MenuItem>
+            ))}
+          </TextField>
         </Box>
 
         <TableContainer 

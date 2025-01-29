@@ -113,8 +113,18 @@ function Dashboard() {
       // Taxa de ocupação
       const datasRef = collection(db, 'datas_disponiveis');
       const datasSnapshot = await getDocs(datasRef);
-      const totalDatas = datasSnapshot.docs.length;
-      setTaxaOcupacao(totalDatas > 0 ? (agendamentos.length / totalDatas) * 100 : 0);
+      const datasDisponiveis = datasSnapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      }));
+
+      // Calcula a capacidade total (cada data tem 18 horários disponíveis - 9h às 12h e 14h às 17h)
+      const horariosDisponiveis = 18; // Total de horários por dia
+      const capacidadeTotal = datasDisponiveis.length * horariosDisponiveis;
+
+      // Calcula a taxa de ocupação
+      const taxaOcup = capacidadeTotal > 0 ? Math.min((agendamentos.length / capacidadeTotal) * 100, 100) : 0;
+      setTaxaOcupacao(parseFloat(taxaOcup.toFixed(1))); // Limita a 1 casa decimal
 
       // Dados por cidade
       const dadosCidade = {};
@@ -237,7 +247,7 @@ function Dashboard() {
         <Grid item xs={12} sm={6} md={3}>
           <Paper sx={{ p: 2, textAlign: 'center' }}>
             <Typography variant="h6">Taxa de Ocupação</Typography>
-            <Typography variant="h4">{taxaOcupacao.toFixed(1)}%</Typography>
+            <Typography variant="h4">{taxaOcupacao}%</Typography>
           </Paper>
         </Grid>
 
