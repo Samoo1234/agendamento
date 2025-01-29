@@ -299,12 +299,14 @@ function GerenciarUsuarios() {
                     />
                   </TableCell>
                   <TableCell align="center">
-                    <IconButton
-                      color="error"
-                      onClick={() => handleExcluirUsuario(usuario.id, usuario.email)}
-                    >
-                      <DeleteIcon />
-                    </IconButton>
+                    {isAdmin() && (
+                      <IconButton
+                        color="error"
+                        onClick={() => handleExcluirUsuario(usuario.id, usuario.email)}
+                      >
+                        <DeleteIcon />
+                      </IconButton>
+                    )}
                   </TableCell>
                 </TableRow>
               ))}
