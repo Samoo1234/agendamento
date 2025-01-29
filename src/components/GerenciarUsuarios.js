@@ -40,9 +40,12 @@ import {
   deleteDoc,
   updateDoc,
   where,
-  serverTimestamp
+  serverTimestamp,
+  setDoc
 } from 'firebase/firestore';
 import { ColorModeContext } from '../App';
+import { useAuth } from '../contexts/AuthContext';
+import { USER_ROLES } from '../constants/roles';
 
 function GerenciarUsuarios() {
   const [usuarios, setUsuarios] = useState([]);
@@ -54,16 +57,27 @@ function GerenciarUsuarios() {
   const [loading, setLoading] = useState(false);
   const theme = useTheme();
   const colorMode = useContext(ColorModeContext);
+  const { currentUser, isAdmin, userRole } = useAuth();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
   useEffect(() => {
+    if (!currentUser) return;
     carregarUsuarios();
-  }, []);
+  }, [currentUser]);
 
   const carregarUsuarios = async () => {
     try {
       setLoading(true);
       const usuariosRef = collection(db, 'usuarios');
-      const q = query(usuariosRef);
+      let q;
+      
+      // Se não for admin, só carrega o próprio usuário
+      if (!isAdmin()) {
+        q = query(usuariosRef, where('uid', '==', currentUser.uid));
+      } else {
+        q = query(usuariosRef);
+      }
+      
       const snapshot = await getDocs(q);
       
       const usuariosData = snapshot.docs.map(doc => ({
@@ -84,19 +98,25 @@ function GerenciarUsuarios() {
   };
 
   const handleCriarUsuario = async () => {
+    if (!isAdmin()) {
+      setError('Você não tem permissão para criar usuários');
+      return;
+    }
+
     try {
       setLoading(true);
       
       // 1. Criar usuário no Firebase Auth
       const userCredential = await createUserWithEmailAndPassword(auth, novoEmail, novaSenha);
       
-      // 2. Adicionar informações adicionais no Firestore
-      const usuariosRef = collection(db, 'usuarios');
-      await addDoc(usuariosRef, {
+      // 2. Adicionar informações adicionais no Firestore usando o uid como ID do documento
+      const userRef = doc(db, 'usuarios', userCredential.user.uid);
+      await setDoc(userRef, {
         uid: userCredential.user.uid,
         email: novoEmail,
         dataCriacao: serverTimestamp(),
-        disabled: false
+        disabled: false,
+        role: USER_ROLES.USER // Define role padrão como USER
       });
       
       // 3. Atualizar a lista local
@@ -115,6 +135,11 @@ function GerenciarUsuarios() {
   };
 
   const handleExcluirUsuario = async (id, email) => {
+    if (!isAdmin()) {
+      setError('Você não tem permissão para excluir usuários');
+      return;
+    }
+
     try {
       setLoading(true);
       
@@ -135,6 +160,11 @@ function GerenciarUsuarios() {
   };
 
   const handleToggleStatus = async (id) => {
+    if (!isAdmin()) {
+      setError('Você não tem permissão para alterar status de usuários');
+      return;
+    }
+
     try {
       setLoading(true);
       
@@ -165,6 +195,28 @@ function GerenciarUsuarios() {
     }
   };
 
+  // Função para tornar usuário admin
+  const handleToggleAdmin = async (id, isAdmin) => {
+    if (!currentUser) return;
+    
+    try {
+      const userRef = doc(db, 'usuarios', id);
+      await updateDoc(userRef, {
+        role: isAdmin ? USER_ROLES.USER : USER_ROLES.ADMIN
+      });
+      
+      setSuccess('Role do usuário atualizada com sucesso!');
+      await carregarUsuarios();
+    } catch (error) {
+      setError('Erro ao atualizar role do usuário: ' + error.message);
+    }
+  };
+
+  // Não mostrar nada se não houver usuário logado
+  if (!currentUser) {
+    return null;
+  }
+
   return (
     <Box sx={{ p: { xs: 1, sm: 2, md: 3 } }}>
       <Box sx={{ 
@@ -186,13 +238,15 @@ function GerenciarUsuarios() {
           >
             {theme.palette.mode === 'dark' ? <Brightness7Icon /> : <Brightness4Icon />}
           </IconButton>
-          <Button
-            variant="contained"
-            onClick={() => setOpenDialog(true)}
-            fullWidth={useMediaQuery(theme.breakpoints.down('sm'))}
-          >
-            Novo Usuário
-          </Button>
+          {isAdmin() && (
+            <Button
+              variant="contained"
+              onClick={() => setOpenDialog(true)}
+              fullWidth={isMobile}
+            >
+              Novo Usuário
+            </Button>
+          )}
         </Box>
       </Box>
 
@@ -204,6 +258,7 @@ function GerenciarUsuarios() {
                 <TableCell>Email</TableCell>
                 <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' } }}>Data de Criação</TableCell>
                 <TableCell align="center">Status</TableCell>
+                <TableCell align="center">Admin</TableCell>
                 <TableCell align="center">Ações</TableCell>
               </TableRow>
             </TableHead>
@@ -220,7 +275,7 @@ function GerenciarUsuarios() {
                         <Switch
                           checked={!usuario.disabled}
                           onChange={() => handleToggleStatus(usuario.id)}
-                          color="primary"
+                          disabled={!isAdmin()}
                         />
                       }
                       label={usuario.disabled ? 'Inativo' : 'Ativo'}
@@ -229,6 +284,18 @@ function GerenciarUsuarios() {
                           display: { xs: 'none', sm: 'block' }
                         }
                       }}
+                    />
+                  </TableCell>
+                  <TableCell align="center">
+                    <FormControlLabel
+                      control={
+                        <Switch
+                          checked={usuario.role === USER_ROLES.ADMIN}
+                          onChange={() => handleToggleAdmin(usuario.id, usuario.role === USER_ROLES.ADMIN)}
+                          disabled={!isAdmin()}
+                        />
+                      }
+                      label={usuario.role === USER_ROLES.ADMIN ? "Admin" : "Usuário"}
                     />
                   </TableCell>
                   <TableCell align="center">
@@ -276,22 +343,21 @@ function GerenciarUsuarios() {
       </Dialog>
 
       <Snackbar
-        open={!!success}
+        open={Boolean(success || error)}
         autoHideDuration={6000}
-        onClose={() => setSuccess('')}
+        onClose={() => {
+          setSuccess('');
+          setError('');
+        }}
       >
-        <Alert severity="success" sx={{ width: '100%' }}>
-          {success}
-        </Alert>
-      </Snackbar>
-
-      <Snackbar
-        open={!!error}
-        autoHideDuration={6000}
-        onClose={() => setError('')}
-      >
-        <Alert severity="error" sx={{ width: '100%' }}>
-          {error}
+        <Alert 
+          onClose={() => {
+            setSuccess('');
+            setError('');
+          }} 
+          severity={success ? "success" : "error"}
+        >
+          {success || error}
         </Alert>
       </Snackbar>
     </Box>
