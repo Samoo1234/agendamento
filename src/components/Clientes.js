@@ -142,21 +142,6 @@ function Clientes() {
     }
   };
 
-  const calcularIdade = (dataNascimento) => {
-    if (!dataNascimento) return '';
-    const hoje = new Date();
-    const nascimento = new Date(dataNascimento);
-    let idade = hoje.getFullYear() - nascimento.getFullYear();
-    const mesAtual = hoje.getMonth();
-    const mesNascimento = nascimento.getMonth();
-    
-    if (mesNascimento > mesAtual || 
-        (mesNascimento === mesAtual && nascimento.getDate() > hoje.getDate())) {
-      idade--;
-    }
-    return idade;
-  };
-
   const formatarData = (data) => {
     if (!data) return '';
     const dataObj = new Date(data + 'T00:00:00');
@@ -190,7 +175,6 @@ function Clientes() {
     const clientesFiltrados = filtrarClientes();
     const dados = clientesFiltrados.map(cliente => [
       cliente.nome || '',
-      calcularIdade(cliente.dataNascimento) || '',
       cliente.cidade || '',
       formatarData(cliente.data) || '',
       cliente.horario || '',
@@ -198,7 +182,7 @@ function Clientes() {
     ]);
 
     doc.autoTable({
-      head: [['Nome', 'Idade', 'Cidade', 'Data', 'Horário', 'Descrição']],
+      head: [['Nome', 'Cidade', 'Data', 'Horário', 'Descrição']],
       body: dados,
       startY: 40,
       theme: theme.palette.mode === 'dark' ? 'dark' : 'striped',
@@ -304,7 +288,6 @@ function Clientes() {
             <TableHead>
               <TableRow sx={{ bgcolor: '#000033' }}>
                 <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>Nome</TableCell>
-                <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>Idade</TableCell>
                 <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>Cidade</TableCell>
                 <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>Data</TableCell>
                 <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>Horário</TableCell>
@@ -315,7 +298,6 @@ function Clientes() {
               {filtrarClientes().map((cliente) => (
                 <TableRow key={cliente.id}>
                   <TableCell>{cliente.nome || ''}</TableCell>
-                  <TableCell>{calcularIdade(cliente.dataNascimento)}</TableCell>
                   <TableCell>{cliente.cidade || ''}</TableCell>
                   <TableCell>{formatarData(cliente.data)}</TableCell>
                   <TableCell>{cliente.horario || ''}</TableCell>

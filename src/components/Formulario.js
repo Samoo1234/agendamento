@@ -57,8 +57,6 @@ const horarios = gerarHorarios();
 function Formulario() {
   const navigate = useNavigate();
   const [nome, setNome] = useState('');
-  const [dataNascimento, setDataNascimento] = useState('');
-  const [dataNascimentoError, setDataNascimentoError] = useState('');
   const [telefone, setTelefone] = useState('');
   const [telefoneError, setTelefoneError] = useState('');
   const [cidade, setCidade] = useState('');
@@ -184,55 +182,9 @@ function Formulario() {
     validarTelefone(valorFormatado);
   };
 
-  const validarDataNascimento = (data) => {
-    if (!data) return false;
-
-    const dataNasc = new Date(data);
-    const hoje = new Date();
-    const anoMinimo = 1900;
-    
-    // Verifica se é uma data válida
-    if (isNaN(dataNasc.getTime())) {
-      setDataNascimentoError('Data inválida');
-      return false;
-    }
-
-    // Verifica se a data é futura
-    if (dataNasc > hoje) {
-      setDataNascimentoError('A data não pode ser futura');
-      return false;
-    }
-
-    // Verifica se o ano é menor que 1900
-    if (dataNasc.getFullYear() < anoMinimo) {
-      setDataNascimentoError('O ano não pode ser menor que 1900');
-      return false;
-    }
-
-    // Verifica se o ano tem mais de 4 dígitos
-    if (data.split('-')[0].length > 4) {
-      setDataNascimentoError('O ano deve ter 4 dígitos');
-      return false;
-    }
-
-    setDataNascimentoError('');
-    return true;
-  };
-
-  const handleDataNascimentoChange = (e) => {
-    const novaData = e.target.value;
-    setDataNascimento(novaData);
-    validarDataNascimento(novaData);
-  };
-
   const handleSubmit = async (e) => {
     e.preventDefault();
     
-    // Validação da data de nascimento antes de enviar
-    if (!validarDataNascimento(dataNascimento)) {
-      return;
-    }
-
     // Validação do telefone antes de enviar
     if (!validarTelefone(telefone)) {
       return;
@@ -272,7 +224,6 @@ function Formulario() {
 
       await addDoc(collection(db, 'agendamentos'), {
         nome,
-        dataNascimento,
         telefone,
         cidade,
         data: dataFormatada,
@@ -284,7 +235,6 @@ function Formulario() {
 
       setSuccess(true);
       setNome('');
-      setDataNascimento('');
       setTelefone('');
       setCidade('');
       setData('');
@@ -371,25 +321,6 @@ function Formulario() {
             onChange={(e) => setNome(e.target.value)}
             margin="normal"
             required
-          />
-
-          <TextField
-            fullWidth
-            label="Data de Nascimento"
-            type="date"
-            value={dataNascimento}
-            onChange={handleDataNascimentoChange}
-            margin="normal"
-            required
-            error={!!dataNascimentoError}
-            helperText={dataNascimentoError}
-            InputLabelProps={{
-              shrink: true,
-            }}
-            inputProps={{
-              max: new Date().toISOString().split('T')[0], // Data máxima é hoje
-              min: "1900-01-01" // Data mínima é 01/01/1900
-            }}
           />
 
           <TextField
