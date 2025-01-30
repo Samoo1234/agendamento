@@ -11,6 +11,7 @@ import GerenciarUsuarios from './components/GerenciarUsuarios';
 import Layout from './components/Layout';
 import PrivateRoute from './components/PrivateRoute';
 import { AuthProvider } from './contexts/AuthContext';
+import { InactivityProvider } from './contexts/InactivityContext';
 
 // Criando contexto para o tema
 export const ColorModeContext = React.createContext({ toggleColorMode: () => {} });
@@ -88,9 +89,11 @@ function App() {
                 path="/dashboard"
                 element={
                   <PrivateRoute>
-                    <Layout>
-                      <DashboardHome />
-                    </Layout>
+                    <InactivityProvider>
+                      <Layout>
+                        <DashboardHome />
+                      </Layout>
+                    </InactivityProvider>
                   </PrivateRoute>
                 }
               />
@@ -98,9 +101,11 @@ function App() {
                 path="/datas"
                 element={
                   <PrivateRoute>
-                    <Layout>
-                      <DatasDisponiveis />
-                    </Layout>
+                    <InactivityProvider>
+                      <Layout>
+                        <DatasDisponiveis />
+                      </Layout>
+                    </InactivityProvider>
                   </PrivateRoute>
                 }
               />
@@ -108,9 +113,11 @@ function App() {
                 path="/clientes"
                 element={
                   <PrivateRoute>
-                    <Layout>
-                      <Clientes />
-                    </Layout>
+                    <InactivityProvider>
+                      <Layout>
+                        <Clientes />
+                      </Layout>
+                    </InactivityProvider>
                   </PrivateRoute>
                 }
               />
@@ -118,9 +125,11 @@ function App() {
                 path="/usuarios"
                 element={
                   <PrivateRoute>
-                    <Layout>
-                      <GerenciarUsuarios />
-                    </Layout>
+                    <InactivityProvider>
+                      <Layout>
+                        <GerenciarUsuarios />
+                      </Layout>
+                    </InactivityProvider>
                   </PrivateRoute>
                 }
               />
