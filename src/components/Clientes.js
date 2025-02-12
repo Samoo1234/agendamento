@@ -225,7 +225,7 @@ function Clientes() {
     // Configurações da tabela
     const startY = 20;
     doc.setFontSize(20);
-    doc.setTextColor(33, 150, 243); // Cor padrão #2196f3
+    doc.setTextColor(6, 9, 80); // #060950
     doc.text('Relatório de Agendamentos', doc.internal.pageSize.getWidth() / 2, 15, { align: 'center' });
     doc.setTextColor(0, 0, 0); // Volta para preto
     
@@ -243,7 +243,7 @@ function Clientes() {
         descricao: { cellWidth: 'auto' }
       },
       headStyles: {
-        fillColor: [33, 150, 243], // Cor padrão #2196f3
+        fillColor: [6, 9, 80], // #060950
         textColor: [255, 255, 255], // Texto branco
         fontSize: 8,
         halign: 'center'
