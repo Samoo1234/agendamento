@@ -21,15 +21,21 @@ import {
   Switch,
   FormControlLabel,
   useTheme,
-  useMediaQuery
+  useMediaQuery,
+  Select,
+  MenuItem,
+  FormControl,
+  InputLabel
 } from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
 import Brightness4Icon from '@mui/icons-material/Brightness4';
 import Brightness7Icon from '@mui/icons-material/Brightness7';
-import { auth, db } from '../services/firebase';
+import { auth, db, functions } from '../services/firebase';
 import { 
   createUserWithEmailAndPassword,
-  signInWithEmailAndPassword
+  signInWithEmailAndPassword,
+  deleteUser,
+  getAuth
 } from 'firebase/auth';
 import { 
   collection, 
@@ -43,6 +49,7 @@ import {
   serverTimestamp,
   setDoc
 } from 'firebase/firestore';
+import { httpsCallable } from 'firebase/functions';
 import { ColorModeContext } from '../App';
 import { useAuth } from '../contexts/AuthContext';
 import { USER_ROLES } from '../constants/roles';
@@ -51,6 +58,8 @@ function GerenciarUsuarios() {
   const [usuarios, setUsuarios] = useState([]);
   const [novoEmail, setNovoEmail] = useState('');
   const [novaSenha, setNovaSenha] = useState('');
+  const [novaCidade, setNovaCidade] = useState('');
+  const [novoRole, setNovoRole] = useState(USER_ROLES.USER);
   const [openDialog, setOpenDialog] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
@@ -59,6 +68,14 @@ function GerenciarUsuarios() {
   const colorMode = useContext(ColorModeContext);
   const { currentUser, isAdmin, userRole } = useAuth();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+
+  const cidades = [
+    'Mantena',
+    'Central de Minas',
+    'Mantenópolis',
+    'Alto Rio Novo',
+    'São João de Mantena'
+  ];
 
   useEffect(() => {
     if (!currentUser) return;
@@ -103,8 +120,25 @@ function GerenciarUsuarios() {
       return;
     }
 
+    if (!novaCidade) {
+      setError('Por favor, selecione uma cidade');
+      return;
+    }
+
     try {
       setLoading(true);
+      setError('');
+
+      // Verificar se o email já existe
+      const usuariosRef = collection(db, 'usuarios');
+      const q = query(usuariosRef, where('email', '==', novoEmail));
+      const querySnapshot = await getDocs(q);
+      
+      if (!querySnapshot.empty) {
+        setError('Este email já está cadastrado no sistema');
+        setLoading(false);
+        return;
+      }
       
       // 1. Criar usuário no Firebase Auth
       const userCredential = await createUserWithEmailAndPassword(auth, novoEmail, novaSenha);
@@ -114,9 +148,10 @@ function GerenciarUsuarios() {
       await setDoc(userRef, {
         uid: userCredential.user.uid,
         email: novoEmail,
+        cidade: novaCidade,
         dataCriacao: serverTimestamp(),
         disabled: false,
-        role: USER_ROLES.USER // Define role padrão como USER
+        role: novoRole // Usa o role selecionado
       });
       
       // 3. Atualizar a lista local
@@ -126,34 +161,80 @@ function GerenciarUsuarios() {
       setOpenDialog(false);
       setNovoEmail('');
       setNovaSenha('');
+      setNovaCidade('');
+      setNovoRole(USER_ROLES.USER); // Reset para o valor padrão
     } catch (error) {
       console.error('Erro ao criar usuário:', error);
-      setError('Erro ao criar usuário: ' + error.message);
+      let mensagemErro = 'Erro ao criar usuário';
+      
+      // Traduzir mensagens de erro comuns do Firebase
+      switch (error.code) {
+        case 'auth/email-already-in-use':
+          mensagemErro = 'Este email já está em uso';
+          break;
+        case 'auth/invalid-email':
+          mensagemErro = 'Email inválido';
+          break;
+        case 'auth/operation-not-allowed':
+          mensagemErro = 'Operação não permitida';
+          break;
+        case 'auth/weak-password':
+          mensagemErro = 'A senha é muito fraca. Use pelo menos 6 caracteres';
+          break;
+        default:
+          mensagemErro = 'Erro ao criar usuário: ' + error.message;
+      }
+      
+      setError(mensagemErro);
     } finally {
       setLoading(false);
     }
   };
 
-  const handleExcluirUsuario = async (id, email) => {
+  const handleExcluirUsuario = async (uid, email) => {
     if (!isAdmin()) {
       setError('Você não tem permissão para excluir usuários');
       return;
     }
 
+    if (!window.confirm(`Tem certeza que deseja excluir o usuário ${email}?`)) {
+      return;
+    }
+
     try {
       setLoading(true);
-      
-      // 1. Excluir do Firestore
-      const usuarioRef = doc(db, 'usuarios', id);
+      setError('');
+
+      // 1. Chamar a Cloud Function para deletar o usuário do Authentication
+      const deleteUserFunction = httpsCallable(functions, 'deleteUser');
+      await deleteUserFunction({ uid });
+
+      // 2. Excluir do Firestore
+      const usuarioRef = doc(db, 'usuarios', uid);
       await deleteDoc(usuarioRef);
       
-      // 2. Atualizar lista local
-      setUsuarios(prev => prev.filter(user => user.id !== id));
-      
+      // 3. Atualizar lista local
+      setUsuarios(prev => prev.filter(user => user.id !== uid));
       setSuccess('Usuário excluído com sucesso!');
+      
     } catch (error) {
       console.error('Erro ao excluir usuário:', error);
-      setError('Erro ao excluir usuário');
+      let mensagemErro = 'Erro ao excluir usuário';
+      
+      if (error.code === 'functions/permission-denied') {
+        mensagemErro = 'Você não tem permissão para excluir usuários';
+      } else if (error.code === 'functions/unauthenticated') {
+        mensagemErro = 'Você precisa estar autenticado para excluir usuários';
+      } else if (error.code === 'functions/invalid-argument') {
+        mensagemErro = 'Dados inválidos para exclusão do usuário';
+      } else {
+        mensagemErro = 'Erro ao excluir usuário: ' + error.message;
+      }
+      
+      setError(mensagemErro);
+      
+      // Se houver erro, recarregar a lista para garantir consistência
+      await carregarUsuarios();
     } finally {
       setLoading(false);
     }
@@ -250,95 +331,108 @@ function GerenciarUsuarios() {
         </Box>
       </Box>
 
-      <Paper sx={{ p: { xs: 1, sm: 2, md: 3 }, overflowX: 'auto' }}>
-        <TableContainer>
-          <Table>
-            <TableHead>
-              <TableRow>
-                <TableCell>Email</TableCell>
-                <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' } }}>Data de Criação</TableCell>
-                <TableCell align="center">Status</TableCell>
-                <TableCell align="center">Admin</TableCell>
-                <TableCell align="center">Ações</TableCell>
+      <TableContainer component={Paper}>
+        <Table>
+          <TableHead>
+            <TableRow>
+              <TableCell>Email</TableCell>
+              <TableCell>Cidade</TableCell>
+              <TableCell>Função</TableCell>
+              <TableCell>Data de Criação</TableCell>
+              <TableCell>Status</TableCell>
+              {isAdmin() && <TableCell>Ações</TableCell>}
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            {usuarios.map((usuario) => (
+              <TableRow key={usuario.id}>
+                <TableCell>{usuario.email}</TableCell>
+                <TableCell>{usuario.cidade || 'Não definida'}</TableCell>
+                <TableCell>{usuario.role || 'user'}</TableCell>
+                <TableCell>
+                  {new Date(usuario.metadata.creationTime).toLocaleDateString('pt-BR')}
+                </TableCell>
+                <TableCell>
+                  <FormControlLabel
+                    control={
+                      <Switch
+                        checked={!usuario.disabled}
+                        onChange={() => handleToggleStatus(usuario.id)}
+                        disabled={!isAdmin() || loading}
+                      />
+                    }
+                    label={usuario.disabled ? 'Inativo' : 'Ativo'}
+                  />
+                </TableCell>
+                {isAdmin() && (
+                  <TableCell>
+                    <IconButton
+                      onClick={() => handleExcluirUsuario(usuario.id, usuario.email)}
+                      disabled={loading}
+                    >
+                      <DeleteIcon />
+                    </IconButton>
+                  </TableCell>
+                )}
               </TableRow>
-            </TableHead>
-            <TableBody>
-              {usuarios.map((usuario) => (
-                <TableRow key={usuario.id}>
-                  <TableCell>{usuario.email}</TableCell>
-                  <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' } }}>
-                    {new Date(usuario.metadata.creationTime).toLocaleDateString('pt-BR')}
-                  </TableCell>
-                  <TableCell align="center">
-                    <FormControlLabel
-                      control={
-                        <Switch
-                          checked={!usuario.disabled}
-                          onChange={() => handleToggleStatus(usuario.id)}
-                          disabled={!isAdmin()}
-                        />
-                      }
-                      label={usuario.disabled ? 'Inativo' : 'Ativo'}
-                      sx={{
-                        '& .MuiFormControlLabel-label': {
-                          display: { xs: 'none', sm: 'block' }
-                        }
-                      }}
-                    />
-                  </TableCell>
-                  <TableCell align="center">
-                    <FormControlLabel
-                      control={
-                        <Switch
-                          checked={usuario.role === USER_ROLES.ADMIN}
-                          onChange={() => handleToggleAdmin(usuario.id, usuario.role === USER_ROLES.ADMIN)}
-                          disabled={!isAdmin()}
-                        />
-                      }
-                      label={usuario.role === USER_ROLES.ADMIN ? "Admin" : "Usuário"}
-                    />
-                  </TableCell>
-                  <TableCell align="center">
-                    {isAdmin() && (
-                      <IconButton
-                        color="error"
-                        onClick={() => handleExcluirUsuario(usuario.id, usuario.email)}
-                      >
-                        <DeleteIcon />
-                      </IconButton>
-                    )}
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </TableContainer>
-      </Paper>
+            ))}
+          </TableBody>
+        </Table>
+      </TableContainer>
 
       <Dialog open={openDialog} onClose={() => setOpenDialog(false)}>
-        <DialogTitle>Novo Usuário</DialogTitle>
+        <DialogTitle>Criar Novo Usuário</DialogTitle>
         <DialogContent>
-          <TextField
-            autoFocus
-            margin="dense"
-            label="Email"
-            type="email"
-            fullWidth
-            value={novoEmail}
-            onChange={(e) => setNovoEmail(e.target.value)}
-          />
-          <TextField
-            margin="dense"
-            label="Senha"
-            type="password"
-            fullWidth
-            value={novaSenha}
-            onChange={(e) => setNovaSenha(e.target.value)}
-          />
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, pt: 2 }}>
+            <TextField
+              label="Email"
+              type="email"
+              fullWidth
+              value={novoEmail}
+              onChange={(e) => setNovoEmail(e.target.value)}
+            />
+            <TextField
+              label="Senha"
+              type="password"
+              fullWidth
+              value={novaSenha}
+              onChange={(e) => setNovaSenha(e.target.value)}
+            />
+            <FormControl fullWidth>
+              <InputLabel id="cidade-label">Cidade</InputLabel>
+              <Select
+                labelId="cidade-label"
+                value={novaCidade}
+                label="Cidade"
+                onChange={(e) => setNovaCidade(e.target.value)}
+              >
+                {cidades.map((cidade) => (
+                  <MenuItem key={cidade} value={cidade}>
+                    {cidade}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+            <FormControl fullWidth>
+              <InputLabel id="role-label">Função</InputLabel>
+              <Select
+                labelId="role-label"
+                value={novoRole}
+                label="Função"
+                onChange={(e) => setNovoRole(e.target.value)}
+              >
+                <MenuItem value={USER_ROLES.USER}>Usuário</MenuItem>
+                <MenuItem value={USER_ROLES.ADMIN}>Administrador</MenuItem>
+              </Select>
+            </FormControl>
+          </Box>
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setOpenDialog(false)}>Cancelar</Button>
-          <Button onClick={handleCriarUsuario} variant="contained" disabled={loading}>
+          <Button 
+            onClick={handleCriarUsuario} 
+            disabled={loading || !novoEmail || !novaSenha || !novaCidade}
+          >
             Criar
           </Button>
         </DialogActions>

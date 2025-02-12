@@ -12,10 +12,12 @@ import {
   MenuItem,
   Grid,
   Typography,
-  Button
+  Button,
+  InputAdornment
 } from '@mui/material';
-import { collection, getDocs, query, where } from 'firebase/firestore';
+import { collection, getDocs, query, where, addDoc } from 'firebase/firestore';
 import { db } from '../firebase';
+import { getFunctions, httpsCallable } from 'firebase/functions';
 
 const cidades = [
   'Todas',
@@ -60,6 +62,7 @@ function Agendamentos() {
     cidade: '',
     data: '',
     horario: '',
+    whatsapp: '',
     status: 'pendente'
   });
 
@@ -137,9 +140,62 @@ function Agendamentos() {
     }
   }, [filtros.data, filtros.cidade]);
 
-  const handleSubmit = (event) => {
+  const handleSubmit = async (event) => {
     event.preventDefault();
-    console.log(formData);
+    
+    // Validar formato do WhatsApp
+    const whatsappRegex = /^\+55\d{10,11}$/;
+    if (!whatsappRegex.test(formData.whatsapp)) {
+      alert('Por favor, insira um número de WhatsApp válido no formato +55DDD999999999');
+      return;
+    }
+
+    try {
+      // Salvar agendamento no Firestore
+      const docRef = await addDoc(collection(db, 'agendamentos'), formData);
+      
+      // Enviar notificação via WhatsApp
+      const functions = getFunctions();
+      const notifyAppointment = httpsCallable(functions, 'notifyAppointment');
+      
+      await notifyAppointment({
+        phoneNumber: formData.whatsapp,
+        nome: formData.nome,
+        data: formData.data,
+        horario: formData.horario
+      });
+
+      alert('Agendamento realizado com sucesso! Você receberá uma mensagem de confirmação no WhatsApp.');
+
+      // Limpar formulário e atualizar lista
+      setFormData({
+        nome: '',
+        idade: '',
+        cidade: '',
+        data: '',
+        horario: '',
+        whatsapp: '',
+        status: 'pendente'
+      });
+      
+      // Atualizar lista de agendamentos
+      fetchAgendamentos();
+      
+    } catch (error) {
+      console.error('Erro ao criar agendamento:', error);
+      alert('Erro ao criar agendamento. Por favor, tente novamente.');
+    }
+  };
+
+  const fetchAgendamentos = async () => {
+    try {
+      const q = query(collection(db, 'agendamentos'));
+      const querySnapshot = await getDocs(q);
+      const agendamentos = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      setAgendamentos(agendamentos);
+    } catch (error) {
+      console.error('Erro ao buscar agendamentos:', error);
+    }
   };
 
   return (
@@ -232,7 +288,6 @@ function Agendamentos() {
                 fullWidth
                 label="Idade"
                 name="idade"
-                type="number"
                 value={formData.idade}
                 onChange={handleInputChange}
               />
@@ -283,6 +338,24 @@ function Agendamentos() {
                   </MenuItem>
                 ))}
               </TextField>
+            </Grid>
+            <Grid item xs={12} sm={6}>
+              <TextField
+                required
+                fullWidth
+                label="WhatsApp"
+                name="whatsapp"
+                value={formData.whatsapp}
+                onChange={handleInputChange}
+                placeholder="(00)00000-0000"
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <Typography variant="body1" style={{ color: '#000' }}>+55</Typography>
+                    </InputAdornment>
+                  ),
+                }}
+              />
             </Grid>
             <Grid item xs={12}>
               <Button

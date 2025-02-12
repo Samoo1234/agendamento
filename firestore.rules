@@ -1,31 +1,23 @@
 rules_version = '2';
+
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Função auxiliar para verificar se o usuário está autenticado
-    function isAuthenticated() {
-      return request.auth != null;
+    // Permitir acesso a todos os documentos para teste inicial
+    match /{document=**} {
+      allow read, write: if true;
     }
     
-    // Função para verificar se o usuário é admin
-    function isAdmin() {
-      return isAuthenticated() && 
-             get(/databases/$(database)/documents/usuarios/$(request.auth.uid)).data.role == 'admin';
+    // Regras específicas para cada coleção (implementaremos depois)
+    match /clientes/{cliente} {
+      allow read, write: if true;
     }
     
-    // Função para verificar se o usuário está acessando seus próprios dados
-    function isOwner(userId) {
-      return isAuthenticated() && request.auth.uid == userId;
+    match /agendamentos/{agendamento} {
+      allow read, write: if true;
     }
     
-    // Regras para coleção de usuários
-    match /usuarios/{userId} {
-      allow read: if isAuthenticated() && (isAdmin() || isOwner(resource.data.uid));
-      allow create: if isAdmin();
-      allow update: if isAdmin();
-      allow delete: if isAdmin();
+    match /datas_disponiveis/{data} {
+      allow read, write: if true;
     }
-    
-    // Regras para outras coleções...
-    // Você pode adicionar regras específicas para outras coleções aqui
   }
 }
