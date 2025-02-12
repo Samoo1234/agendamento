@@ -44,39 +44,30 @@ export function InactivityProvider({ children }) {
 
   useEffect(() => {
     if (currentUser && isAdmin()) {
-      // Lista de eventos para monitorar atividade
-      const events = [
-        'mousedown',
-        'mousemove',
-        'keypress',
-        'scroll',
-        'touchstart'
-      ];
-
-      // Adiciona os event listeners
-      const handleActivity = () => {
-        resetTimer();
+      const resetTimeout = () => {
+        if (timeoutId) {
+          clearTimeout(timeoutId);
+        }
         setupInactivityTimeout();
       };
 
-      events.forEach(event => {
-        document.addEventListener(event, handleActivity);
-      });
+      // Adiciona os event listeners
+      window.addEventListener('mousemove', resetTimeout);
+      window.addEventListener('keypress', resetTimeout);
 
       // Configura o timeout inicial
       setupInactivityTimeout();
 
       // Cleanup
       return () => {
-        events.forEach(event => {
-          document.removeEventListener(event, handleActivity);
-        });
         if (timeoutId) {
           clearTimeout(timeoutId);
         }
+        window.removeEventListener('mousemove', resetTimeout);
+        window.removeEventListener('keypress', resetTimeout);
       };
     }
-  }, [currentUser, isAdmin]);
+  }, [timeoutId, setupInactivityTimeout]);
 
   return (
     <InactivityContext.Provider value={{ resetTimer }}>

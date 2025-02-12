@@ -1,7 +1,7 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
-import { auth, db } from '../services/firebase';
-import { onAuthStateChanged } from 'firebase/auth';
-import { collection, query, where, getDocs, doc, getDoc } from 'firebase/firestore';
+import { getAuth, onAuthStateChanged } from 'firebase/auth';
+import { collection, getDocs, query, where } from 'firebase/firestore';
+import { db } from '../services/firebase';
 import { USER_ROLES, DEFAULT_ROLE } from '../constants/roles';
 
 const AuthContext = createContext();
@@ -47,7 +47,7 @@ export function AuthProvider({ children }) {
   };
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+    const unsubscribe = onAuthStateChanged(getAuth(), async (user) => {
       if (user) {
         const userData = await fetchUserData(user.uid);
         setUserRole(userData.role);

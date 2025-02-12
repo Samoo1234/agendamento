@@ -128,9 +128,22 @@ function Clientes() {
           return dataFormatada >= hojeFormatado;
         })
         .sort((a, b) => {
+          // Primeiro ordena por data
           const dataA = new Date(a.data + 'T00:00:00');
           const dataB = new Date(b.data + 'T00:00:00');
-          return dataA - dataB;
+          
+          if (dataA.getTime() !== dataB.getTime()) {
+            return dataA - dataB;
+          }
+          
+          // Se a data for igual, ordena por horário
+          const [horaA, minutoA] = a.horario.split(':').map(Number);
+          const [horaB, minutoB] = b.horario.split(':').map(Number);
+          
+          if (horaA !== horaB) {
+            return horaA - horaB;
+          }
+          return minutoA - minutoB;
         });
 
       setDatasDisponiveis(datas);
@@ -149,51 +162,82 @@ function Clientes() {
   };
 
   const filtrarClientes = () => {
-    return clientes.filter(cliente => {
-      const passaFiltroCidade = !filtroCidade || cliente.cidade === filtroCidade;
-      const passaFiltroPeriodo = !filtroPeriodo || cliente.data === filtroPeriodo;
-      return passaFiltroCidade && passaFiltroPeriodo;
-    });
+    return clientes
+      .filter(cliente => {
+        if (filtroCidade && cliente.cidade !== filtroCidade) {
+          return false;
+        }
+        if (filtroPeriodo) {
+          return cliente.data === filtroPeriodo;
+        }
+        return true;
+      })
+      .sort((a, b) => {
+        // Primeiro ordena por data
+        const dataA = new Date(a.data + 'T00:00:00');
+        const dataB = new Date(b.data + 'T00:00:00');
+        
+        if (dataA.getTime() !== dataB.getTime()) {
+          return dataA - dataB;
+        }
+        
+        // Se a data for igual, ordena por horário
+        const [horaA, minutoA] = a.horario.split(':').map(Number);
+        const [horaB, minutoB] = b.horario.split(':').map(Number);
+        
+        if (horaA !== horaB) {
+          return horaA - horaB;
+        }
+        return minutoA - minutoB;
+      });
   };
 
   const gerarPDF = () => {
-    const doc = new jsPDF();
-    
-    // Adiciona título centralizado
-    doc.setFontSize(16);
-    doc.text('Agendamentos', doc.internal.pageSize.width / 2, 20, { align: 'center' });
-    
-    // Adiciona data do relatório
-    doc.setFontSize(10);
-    doc.text(
-      `Data do relatório: ${new Date().toLocaleDateString('pt-BR')}`,
-      doc.internal.pageSize.width / 2,
-      30,
-      { align: 'center' }
-    );
+    const doc = new jsPDF({
+      orientation: 'landscape',
+      unit: 'mm',
+      format: 'a4'
+    });
 
-    const clientesFiltrados = filtrarClientes();
-    const dados = clientesFiltrados.map(cliente => [
-      cliente.nome || '',
-      cliente.cidade || '',
-      formatarData(cliente.data) || '',
-      cliente.horario || '',
-      cliente.descricao || ''
-    ]);
+    // Configuração das colunas da tabela
+    const columns = [
+      { header: 'Nome', dataKey: 'nome' },
+      { header: 'Cidade', dataKey: 'cidade' },
+      { header: 'Data', dataKey: 'data' },
+      { header: 'Horário', dataKey: 'horario' },
+      { header: 'Telefone', dataKey: 'telefone' },
+      { header: 'Descrição', dataKey: 'descricao' }
+    ];
 
+    // Preparar dados para a tabela
+    const dados = clientes.map(cliente => ({
+      nome: cliente.nome,
+      cidade: cliente.cidade,
+      data: new Date(cliente.data + 'T00:00:00').toLocaleDateString('pt-BR'),
+      horario: cliente.horario,
+      telefone: cliente.telefone || 'Não informado',
+      descricao: cliente.descricao || ''
+    }));
+
+    // Configurações da tabela
+    const startY = 20;
+    doc.setFontSize(20);
+    doc.text('Relatório de Agendamentos', doc.internal.pageSize.getWidth() / 2, 15, { align: 'center' });
+    
     doc.autoTable({
-      head: [['Nome', 'Cidade', 'Data', 'Horário', 'Descrição']],
+      columns: columns,
       body: dados,
-      startY: 40,
-      theme: theme.palette.mode === 'dark' ? 'dark' : 'striped',
-      styles: {
-        fontSize: 8,
-        cellPadding: 2,
+      startY: startY,
+      styles: { fontSize: 8 },
+      columnStyles: {
+        nome: { cellWidth: 40 },
+        cidade: { cellWidth: 30 },
+        data: { cellWidth: 25 },
+        horario: { cellWidth: 20 },
+        telefone: { cellWidth: 35 },
+        descricao: { cellWidth: 'auto' }
       },
-      headStyles: {
-        fillColor: theme.palette.mode === 'dark' ? [50, 50, 50] : [220, 220, 220],
-        textColor: theme.palette.mode === 'dark' ? [255, 255, 255] : [0, 0, 0]
-      }
+      theme: 'grid'
     });
 
     doc.save('relatorio-clientes.pdf');
