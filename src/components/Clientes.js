@@ -209,8 +209,11 @@ function Clientes() {
       { header: 'Descrição', dataKey: 'descricao' }
     ];
 
+    // Pegar os dados já ordenados da função filtrarClientes
+    const clientesOrdenados = filtrarClientes();
+
     // Preparar dados para a tabela
-    const dados = clientes.map(cliente => ({
+    const dados = clientesOrdenados.map(cliente => ({
       nome: cliente.nome,
       cidade: cliente.cidade,
       data: new Date(cliente.data + 'T00:00:00').toLocaleDateString('pt-BR'),
@@ -222,7 +225,9 @@ function Clientes() {
     // Configurações da tabela
     const startY = 20;
     doc.setFontSize(20);
+    doc.setTextColor(33, 150, 243); // Cor padrão #2196f3
     doc.text('Relatório de Agendamentos', doc.internal.pageSize.getWidth() / 2, 15, { align: 'center' });
+    doc.setTextColor(0, 0, 0); // Volta para preto
     
     doc.autoTable({
       columns: columns,
@@ -236,6 +241,12 @@ function Clientes() {
         horario: { cellWidth: 20 },
         telefone: { cellWidth: 35 },
         descricao: { cellWidth: 'auto' }
+      },
+      headStyles: {
+        fillColor: [33, 150, 243], // Cor padrão #2196f3
+        textColor: [255, 255, 255], // Texto branco
+        fontSize: 8,
+        halign: 'center'
       },
       theme: 'grid'
     });
