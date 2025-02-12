@@ -155,7 +155,7 @@ function Formulario() {
     // Remove tudo que não é número
     const numeroLimpo = valor.replace(/\D/g, '');
     
-    // Aplica a máscara
+    // Formata para exibição no input
     let numeroFormatado = numeroLimpo;
     if (numeroLimpo.length <= 11) {
       numeroFormatado = numeroLimpo
@@ -164,6 +164,11 @@ function Formulario() {
     }
     
     return numeroFormatado;
+  };
+
+  const formatarTelefoneParaWhatsApp = (telefone) => {
+    const numeroLimpo = telefone.replace(/\D/g, '');
+    return `+55${numeroLimpo}`;
   };
 
   const validarTelefone = (telefone) => {
@@ -222,9 +227,11 @@ function Formulario() {
         throw new Error('Este horário já foi agendado. Por favor, escolha outro horário.');
       }
 
+      const telefoneWhatsApp = formatarTelefoneParaWhatsApp(telefone);
+
       await addDoc(collection(db, 'agendamentos'), {
         nome,
-        telefone,
+        telefone: telefoneWhatsApp,
         cidade,
         data: dataFormatada,
         horario,
