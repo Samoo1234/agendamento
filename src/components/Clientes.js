@@ -199,6 +199,117 @@ function Clientes() {
       format: 'a4'
     });
 
+    // Adiciona a logo
+    const logoWidth = 14; // 40px convertido para mm (aproximadamente)
+    const logoHeight = 14;
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const pageHeight = doc.internal.pageSize.getHeight();
+    
+    // Adiciona o container azul no topo
+    const containerPadding = 2; // 5px de padding convertido para mm
+    const containerHeight = logoHeight + (containerPadding * 2);
+    const containerY = 5; // 5mm do topo da página
+
+    // Centraliza o container na largura da página
+    const containerWidth = logoWidth + (containerPadding * 2);
+    const containerX = (pageWidth / 2) - (containerWidth / 2);
+    
+    doc.setFillColor(6, 9, 80); // #060950
+    doc.roundedRect(containerX, containerY, containerWidth, containerHeight, 1, 1, 'F'); // Cantos levemente arredondados
+
+    // Carrega e adiciona a imagem
+    const img = new Image();
+    img.src = '/logo_new.png';
+    
+    img.onload = () => {
+      try {
+        // Centraliza a logo dentro do container
+        const logoX = containerX + containerPadding;
+        const logoY = containerY + containerPadding;
+        doc.addImage(img, 'PNG', logoX, logoY, logoWidth, logoHeight);
+        
+        // Configurações do título (agora abaixo do container)
+        doc.setFontSize(20);
+        doc.setTextColor(6, 9, 80); // #060950
+        doc.text('Relatório de Agendamentos', pageWidth / 2, containerY + containerHeight + 10, { align: 'center' });
+        doc.setTextColor(0, 0, 0);
+
+        // Configuração das colunas da tabela
+        const columns = [
+          { header: 'Nome', dataKey: 'nome' },
+          { header: 'Cidade', dataKey: 'cidade' },
+          { header: 'Data', dataKey: 'data' },
+          { header: 'Horário', dataKey: 'horario' },
+          { header: 'Telefone', dataKey: 'telefone' },
+          { header: 'Descrição', dataKey: 'descricao' }
+        ];
+
+        // Pegar os dados já ordenados da função filtrarClientes
+        const clientesOrdenados = filtrarClientes();
+
+        // Preparar dados para a tabela
+        const dados = clientesOrdenados.map(cliente => ({
+          nome: cliente.nome,
+          cidade: cliente.cidade,
+          data: new Date(cliente.data + 'T00:00:00').toLocaleDateString('pt-BR'),
+          horario: cliente.horario,
+          telefone: cliente.telefone || 'Não informado',
+          descricao: cliente.descricao || ''
+        }));
+
+        // Configurações da tabela (ajustada para começar após o título)
+        const startY = containerY + containerHeight + 15;
+        
+        doc.autoTable({
+          columns: columns,
+          body: dados,
+          startY: startY,
+          styles: { fontSize: 8 },
+          columnStyles: {
+            nome: { cellWidth: 40 },
+            cidade: { cellWidth: 30 },
+            data: { cellWidth: 25 },
+            horario: { cellWidth: 20 },
+            telefone: { cellWidth: 35 },
+            descricao: { cellWidth: 'auto' }
+          },
+          headStyles: {
+            fillColor: [6, 9, 80], // #060950
+            textColor: [255, 255, 255],
+            fontSize: 8,
+            halign: 'center'
+          },
+          theme: 'grid'
+        });
+
+        doc.save('relatorio-clientes.pdf');
+      } catch (error) {
+        console.error('Erro ao adicionar logo:', error);
+        // Se houver erro ao adicionar a logo, gera o PDF sem ela
+        gerarPDFSemLogo();
+      }
+    };
+
+    img.onerror = () => {
+      console.error('Erro ao carregar a logo');
+      // Se houver erro ao carregar a logo, gera o PDF sem ela
+      gerarPDFSemLogo();
+    };
+  };
+
+  // Função auxiliar para gerar o PDF sem a logo em caso de erro
+  const gerarPDFSemLogo = () => {
+    const doc = new jsPDF({
+      orientation: 'landscape',
+      unit: 'mm',
+      format: 'a4'
+    });
+
+    doc.setFontSize(20);
+    doc.setTextColor(6, 9, 80);
+    doc.text('Relatório de Agendamentos', doc.internal.pageSize.getWidth() / 2, 15, { align: 'center' });
+    doc.setTextColor(0, 0, 0);
+
     // Configuração das colunas da tabela
     const columns = [
       { header: 'Nome', dataKey: 'nome' },
@@ -224,10 +335,6 @@ function Clientes() {
 
     // Configurações da tabela
     const startY = 20;
-    doc.setFontSize(20);
-    doc.setTextColor(6, 9, 80); // #060950
-    doc.text('Relatório de Agendamentos', doc.internal.pageSize.getWidth() / 2, 15, { align: 'center' });
-    doc.setTextColor(0, 0, 0); // Volta para preto
     
     doc.autoTable({
       columns: columns,
@@ -244,7 +351,7 @@ function Clientes() {
       },
       headStyles: {
         fillColor: [6, 9, 80], // #060950
-        textColor: [255, 255, 255], // Texto branco
+        textColor: [255, 255, 255],
         fontSize: 8,
         halign: 'center'
       },
