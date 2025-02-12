@@ -11,29 +11,53 @@ async function sendWhatsAppMessage(phoneNumber, message) {
   const phoneNumberId = config.whatsapp.phone_id;
 
   if (!whatsappToken || !phoneNumberId) {
+    console.error('Configurações ausentes:', { whatsappToken: !!whatsappToken, phoneNumberId: !!phoneNumberId });
     throw new Error('Configurações do WhatsApp não encontradas');
   }
 
+  // Log do número de telefone antes do envio
+  console.log('Tentando enviar mensagem para:', phoneNumber);
+  
   try {
-    const response = await fetch(`https://graph.facebook.com/v17.0/${phoneNumberId}/messages`, {
+    const url = `https://graph.facebook.com/v17.0/${phoneNumberId}/messages`;
+    console.log('URL da requisição:', url);
+    
+    const body = {
+      messaging_product: "whatsapp",
+      to: phoneNumber,
+      type: "text",
+      text: { body: message }
+    };
+    
+    console.log('Corpo da requisição:', JSON.stringify(body));
+
+    const response = await fetch(url, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${whatsappToken}`,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({
-        messaging_product: "whatsapp",
-        to: phoneNumber,
-        type: "text",
-        text: { body: message }
-      })
+      body: JSON.stringify(body)
     });
 
     const data = await response.json();
-    console.log('Mensagem enviada com sucesso:', data);
+    
+    if (!response.ok) {
+      console.error('Erro na resposta da API:', {
+        status: response.status,
+        statusText: response.statusText,
+        data: data
+      });
+      throw new Error(`Erro na API do WhatsApp: ${data.error?.message || 'Erro desconhecido'}`);
+    }
+
+    console.log('Resposta completa da API:', data);
     return data;
   } catch (error) {
-    console.error('Erro ao enviar mensagem:', error);
+    console.error('Erro detalhado ao enviar mensagem:', {
+      message: error.message,
+      stack: error.stack
+    });
     throw error;
   }
 }
@@ -170,5 +194,52 @@ exports.notifyAppointment = functions.https.onCall(async (data, context) => {
   } catch (error) {
     console.error('Erro ao enviar notificação:', error);
     throw new functions.https.HttpsError('internal', 'Erro ao enviar notificação via WhatsApp');
+  }
+});
+
+// Função de teste para envio de WhatsApp
+exports.testWhatsApp = functions.https.onCall(async (data, context) => {
+  try {
+    const phoneNumber = "+5566999161540"; // Seu número formatado
+    const message = "Teste de mensagem do sistema de agendamento. Se você recebeu esta mensagem, significa que o sistema está funcionando corretamente!";
+    
+    console.log('Iniciando teste de envio para:', phoneNumber);
+    const result = await sendWhatsAppMessage(phoneNumber, message);
+    console.log('Resultado do teste:', result);
+    
+    return { success: true, result };
+  } catch (error) {
+    console.error('Erro no teste:', error);
+    throw new functions.https.HttpsError('internal', error.message);
+  }
+});
+
+// Função temporária para criar agendamento de teste
+exports.createTestAppointment = functions.https.onCall(async (data, context) => {
+  try {
+    const agendamentoData = {
+      nome: "Teste WhatsApp",
+      phoneNumber: "+5566999161540",
+      data: new Date().toISOString().split('T')[0], // Data atual
+      hora: "14:30",
+      local: "Ótica Davi - Centro",
+      servico: "Consulta Oftalmológica",
+      status: "Agendado",
+      createdAt: admin.firestore.FieldValue.serverTimestamp()
+    };
+
+    // Criar o agendamento no Firestore
+    const docRef = await admin.firestore().collection('agendamentos').add(agendamentoData);
+    
+    // Enviar mensagem WhatsApp
+    const message = `Olá! Seu agendamento foi confirmado:\nData: ${agendamentoData.data}\nHora: ${agendamentoData.hora}\nLocal: ${agendamentoData.local}\nServiço: ${agendamentoData.servico}`;
+    
+    await sendWhatsAppMessage(agendamentoData.phoneNumber, message);
+    
+    console.log('Agendamento criado com sucesso:', docRef.id);
+    return { success: true, appointmentId: docRef.id };
+  } catch (error) {
+    console.error('Erro ao criar agendamento:', error);
+    throw new functions.https.HttpsError('internal', error.message);
   }
 });
