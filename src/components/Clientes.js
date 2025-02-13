@@ -23,8 +23,9 @@ import {
 import PictureAsPdfIcon from '@mui/icons-material/PictureAsPdf';
 import Brightness4Icon from '@mui/icons-material/Brightness4';
 import Brightness7Icon from '@mui/icons-material/Brightness7';
+import DeleteIcon from '@mui/icons-material/Delete';
 import { ColorModeContext } from '../App';
-import { collection, query, getDocs, where } from 'firebase/firestore';
+import { collection, query, getDocs, where, deleteDoc, doc } from 'firebase/firestore';
 import { db } from '../services/firebase';
 import { jsPDF } from 'jspdf';
 import 'jspdf-autotable';
@@ -54,6 +55,9 @@ function Clientes() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [datasDisponiveis, setDatasDisponiveis] = useState([]);
+  const [openSnackbar, setOpenSnackbar] = useState(false);
+  const [snackbarMessage, setSnackbarMessage] = useState('');
+  const [snackbarSeverity, setSnackbarSeverity] = useState('success');
 
   useEffect(() => {
     carregarClientes();
@@ -370,6 +374,23 @@ function Clientes() {
     }
   };
 
+  const handleDelete = async (clienteId) => {
+    if (window.confirm('Tem certeza que deseja excluir este agendamento?')) {
+      try {
+        await deleteDoc(doc(db, 'agendamentos', clienteId));
+        setClientes(clientes.filter(cliente => cliente.id !== clienteId));
+        setSnackbarMessage('Agendamento excluído com sucesso!');
+        setSnackbarSeverity('success');
+        setOpenSnackbar(true);
+      } catch (error) {
+        console.error('Erro ao excluir agendamento:', error);
+        setSnackbarMessage('Erro ao excluir agendamento. Tente novamente.');
+        setSnackbarSeverity('error');
+        setOpenSnackbar(true);
+      }
+    }
+  };
+
   if (loading) {
     return (
       <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
@@ -454,6 +475,7 @@ function Clientes() {
                 <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>Data</TableCell>
                 <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>Horário</TableCell>
                 <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>Descrição</TableCell>
+                <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>Ações</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
@@ -464,6 +486,11 @@ function Clientes() {
                   <TableCell>{formatarData(cliente.data)}</TableCell>
                   <TableCell>{cliente.horario || ''}</TableCell>
                   <TableCell>{cliente.descricao || ''}</TableCell>
+                  <TableCell>
+                    <IconButton onClick={() => handleDelete(cliente.id)}>
+                      <DeleteIcon />
+                    </IconButton>
+                  </TableCell>
                 </TableRow>
               ))}
             </TableBody>
@@ -500,6 +527,17 @@ function Clientes() {
       >
         <Alert onClose={() => setSuccess('')} severity="success" sx={{ width: '100%' }}>
           {success}
+        </Alert>
+      </Snackbar>
+
+      <Snackbar
+        open={openSnackbar}
+        autoHideDuration={6000}
+        onClose={() => setOpenSnackbar(false)}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
+      >
+        <Alert onClose={() => setOpenSnackbar(false)} severity={snackbarSeverity} sx={{ width: '100%' }}>
+          {snackbarMessage}
         </Alert>
       </Snackbar>
     </Container>

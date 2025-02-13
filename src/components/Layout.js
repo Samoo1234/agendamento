@@ -19,7 +19,7 @@ import DashboardIcon from '@mui/icons-material/Dashboard';
 import PeopleIcon from '@mui/icons-material/People';
 import EventAvailableIcon from '@mui/icons-material/EventAvailable';
 import LogoutIcon from '@mui/icons-material/Logout';
-import SupervisorAccountIcon from '@mui/icons-material/SupervisorAccount';
+import SettingsIcon from '@mui/icons-material/Settings';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { Brightness4, Brightness7 } from '@mui/icons-material';
@@ -115,7 +115,7 @@ const menuItems = [
   { text: 'Dashboard', icon: <DashboardIcon />, path: '/dashboard' },
   { text: 'Datas Disponíveis', icon: <EventAvailableIcon />, path: '/datas' },
   { text: 'Clientes', icon: <PeopleIcon />, path: '/clientes' },
-  { text: 'Usuários', icon: <SupervisorAccountIcon />, path: '/usuarios' },
+  { text: 'Configurações', icon: <SettingsIcon sx={{ color: 'inherit' }} />, path: '/usuarios' },
 ];
 
 function Layout({ children }) {
