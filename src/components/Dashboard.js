@@ -52,8 +52,8 @@ function Dashboard() {
       label: 'Status dos Agendamentos',
       data: [],
       backgroundColor: [
-        'rgba(54, 162, 235, 0.5)',
         'rgba(255, 99, 132, 0.5)',
+        'rgba(54, 162, 235, 0.5)',
         'rgba(255, 206, 86, 0.5)'
       ]
     }]
@@ -239,6 +239,11 @@ function Dashboard() {
 
   return (
     <Box sx={{ flexGrow: 1, p: 3 }}>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 3 }}>
+        <Typography variant="h4" gutterBottom>
+          Dashboard
+        </Typography>
+      </Box>
       <Grid container spacing={3}>
         <Grid item xs={12} sm={6} md={3}>
           <Paper sx={{ p: 2, textAlign: 'center' }}>
