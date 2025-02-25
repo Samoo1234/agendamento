@@ -47,21 +47,40 @@ export function AuthProvider({ children }) {
   };
 
   useEffect(() => {
+    // Verificar se já existe um usuário salvo no localStorage
+    const savedUser = localStorage.getItem('currentUser');
+    if (savedUser) {
+      const user = JSON.parse(savedUser);
+      setCurrentUser(user);
+      fetchUserData(user.uid).then(userData => {
+        setUserRole(userData.role);
+        setUserCity(userData.city);
+        setLoading(false);
+      });
+    }
+
     const unsubscribe = onAuthStateChanged(getAuth(), async (user) => {
       if (user) {
+        // Salvar usuário no localStorage
+        localStorage.setItem('currentUser', JSON.stringify(user));
         const userData = await fetchUserData(user.uid);
         setUserRole(userData.role);
         setUserCity(userData.city);
         setCurrentUser(user);
       } else {
-        setUserRole(null);
-        setUserCity(null);
-        setCurrentUser(null);
+        // Limpar localStorage apenas em logout explícito
+        if (!localStorage.getItem('currentUser')) {
+          setUserRole(null);
+          setUserCity(null);
+          setCurrentUser(null);
+        }
       }
       setLoading(false);
     });
 
-    return unsubscribe;
+    return () => {
+      unsubscribe();
+    };
   }, []);
 
   const value = {
