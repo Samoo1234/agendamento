@@ -62,6 +62,7 @@ function Formulario() {
   const [cidade, setCidade] = useState('');
   const [data, setData] = useState('');
   const [horario, setHorario] = useState('');
+  const [medicoNome, setMedicoNome] = useState('');
   const [descricao, setDescricao] = useState('');
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
@@ -82,8 +83,10 @@ function Formulario() {
   useEffect(() => {
     if (cidade && data) {
       carregarHorariosDisponiveis(cidade, data);
+      carregarMedicoInfo(cidade, data);
     } else {
       setHorariosDisponiveis(horarios);
+      setMedicoNome('');
     }
   }, [cidade, data]);
 
@@ -92,31 +95,47 @@ function Formulario() {
       const datasRef = collection(db, 'datas_disponiveis');
       const q = query(
         datasRef, 
-        where('cidade', '==', cidadeSelecionada),
-        where('status', '==', 'disponível')
+        where('cidade', '==', cidadeSelecionada)  // Removendo temporariamente o filtro de status
       );
       const querySnapshot = await getDocs(q);
       
-      const datas = querySnapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      }));
+      const datas = querySnapshot.docs.map(doc => {
+        const data = doc.data();
+        console.log('Data encontrada:', {
+          id: doc.id,
+          ...data,
+          dataFormatada: new Date(data.data + 'T00:00:00').toLocaleDateString('en-CA')
+        });
+        return {
+          id: doc.id,
+          ...data
+        };
+      });
 
       // Filtrar apenas datas futuras
       const hoje = new Date();
       hoje.setHours(0, 0, 0, 0);
       const hojeFormatado = hoje.toLocaleDateString('en-CA');
+      console.log('Data de hoje:', hojeFormatado);
       
       const datasFuturas = datas.filter(data => {
         const dataDisponivel = new Date(data.data + 'T00:00:00');
         const dataFormatada = dataDisponivel.toLocaleDateString('en-CA');
-        return dataFormatada >= hojeFormatado;
+        const disponivel = dataFormatada >= hojeFormatado && data.status === 'disponível';
+        console.log('Verificando data:', {
+          data: data.data,
+          dataFormatada,
+          status: data.status,
+          disponivel
+        });
+        return disponivel;
       }).sort((a, b) => {
         const dataA = new Date(a.data + 'T00:00:00');
         const dataB = new Date(b.data + 'T00:00:00');
         return dataA - dataB;
       });
 
+      console.log('Datas futuras filtradas:', datasFuturas);
       setDatasDisponiveis(datasFuturas);
     } catch (error) {
       console.error('Erro ao carregar datas disponíveis:', error);
@@ -148,6 +167,28 @@ function Formulario() {
     } catch (error) {
       console.error('Erro ao carregar horários disponíveis:', error);
       setError('Erro ao carregar horários disponíveis para esta data');
+    }
+  };
+
+  const carregarMedicoInfo = async (cidadeSelecionada, dataSelecionada) => {
+    try {
+      const datasRef = collection(db, 'datas_disponiveis');
+      const q = query(
+        datasRef,
+        where('cidade', '==', cidadeSelecionada),
+        where('data', '==', dataSelecionada)
+      );
+      const querySnapshot = await getDocs(q);
+      
+      if (!querySnapshot.empty) {
+        const dataDoc = querySnapshot.docs[0].data();
+        setMedicoNome(dataDoc.medicoNome || '');
+      } else {
+        setMedicoNome('');
+      }
+    } catch (error) {
+      console.error('Erro ao carregar informações do médico:', error);
+      setMedicoNome('');
     }
   };
 
@@ -382,6 +423,22 @@ function Formulario() {
               </MenuItem>
             ))}
           </TextField>
+
+          {medicoNome && (
+            <Typography
+              variant="subtitle1"
+              sx={{
+                mb: 2,
+                width: '100%',
+                p: 1,
+                bgcolor: 'background.paper',
+                borderRadius: 1,
+                textAlign: 'center'
+              }}
+            >
+              Médico: {medicoNome}
+            </Typography>
+          )}
 
           {/* 4. Nome completo */}
           <TextField
