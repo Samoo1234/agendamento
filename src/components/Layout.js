@@ -112,10 +112,26 @@ const Drawer = styled(MuiDrawer, { shouldForwardProp: (prop) => prop !== 'open' 
 );
 
 const menuItems = [
-  { text: 'Dashboard', icon: <DashboardIcon />, path: '/dashboard' },
-  { text: 'Datas Disponíveis', icon: <EventAvailableIcon />, path: '/datas' },
-  { text: 'Clientes', icon: <PeopleIcon />, path: '/clientes' },
-  { text: 'Configurações', icon: <SettingsIcon sx={{ color: 'inherit' }} />, path: '/usuarios' },
+  {
+    text: 'Dashboard',
+    icon: <DashboardIcon />,
+    path: '/dashboard'
+  },
+  {
+    text: 'Datas Disponíveis',
+    icon: <EventAvailableIcon />,
+    path: '/datas'
+  },
+  {
+    text: 'Clientes',
+    icon: <PeopleIcon />,
+    path: '/clientes'
+  },
+  {
+    text: 'Gerenciar Usuários',
+    icon: <SettingsIcon />,
+    path: '/usuarios'
+  }
 ];
 
 function Layout({ children }) {
@@ -133,10 +149,21 @@ function Layout({ children }) {
 
   const handleLogout = async () => {
     try {
+      // Limpar localStorage
+      localStorage.removeItem('currentUser');
+      // Fazer logout do Firebase
       await signOut(auth);
+      // Redirecionar para a página inicial
       navigate('/', { replace: true });
     } catch (error) {
       console.error('Erro ao fazer logout:', error);
+    }
+  };
+
+  const handleNavigate = (path) => {
+    navigate(path);
+    if (isMobile) {
+      toggleDrawer();
     }
   };
 
@@ -199,10 +226,7 @@ function Layout({ children }) {
             {menuItems.map((item) => (
               <ListItemButton
                 key={item.path}
-                onClick={() => {
-                  navigate(item.path);
-                  if (isMobile) toggleDrawer();
-                }}
+                onClick={() => handleNavigate(item.path)}
                 selected={location.pathname === item.path}
                 sx={{
                   '&.Mui-selected': {
@@ -246,8 +270,7 @@ function Layout({ children }) {
             {menuItems.map((item) => (
               <ListItem key={item.text} disablePadding>
                 <ListItemButton
-                  component={Link}
-                  to={item.path}
+                  onClick={() => handleNavigate(item.path)}
                   selected={location.pathname === item.path}
                 >
                   <ListItemIcon>{item.icon}</ListItemIcon>
