@@ -225,14 +225,29 @@ function Formulario() {
   const handleTelefoneChange = (e) => {
     const valorFormatado = formatarTelefone(e.target.value);
     setTelefone(valorFormatado);
-    validarTelefone(valorFormatado);
+    // Só valida se houver um número digitado
+    if (valorFormatado) {
+      if (valorFormatado.length < 14) {
+        setTelefoneError('Número de telefone incompleto');
+      } else {
+        setTelefoneError('');
+      }
+    } else {
+      setTelefoneError('');
+    }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
-    // Validação do telefone antes de enviar
-    if (!validarTelefone(telefone)) {
+
+    if (!nome || !cidade || !data || !horario) {
+      setError('Preencha todos os campos obrigatórios');
+      return;
+    }
+
+    // Só valida o telefone se foi preenchido
+    if (telefone && telefone.length < 14) {
+      setError('Número de telefone incompleto');
       return;
     }
 
@@ -268,15 +283,15 @@ function Formulario() {
         throw new Error('Este horário já foi agendado. Por favor, escolha outro horário.');
       }
 
-      const telefoneWhatsApp = formatarTelefoneParaWhatsApp(telefone);
+      const telefoneWhatsApp = telefone ? formatarTelefoneParaWhatsApp(telefone) : '';
 
       await addDoc(collection(db, 'agendamentos'), {
-        nome,
+        nome: nome.trim(),
         telefone: telefoneWhatsApp,
         cidade,
         data: dataFormatada,
         horario,
-        descricao,
+        descricao: descricao.trim(),
         criadoEm: Timestamp.now(),
         status: 'pendente'
       });
@@ -457,13 +472,10 @@ function Formulario() {
             value={telefone}
             onChange={handleTelefoneChange}
             margin="normal"
-            required
-            placeholder="(00)00000-0000"
             error={!!telefoneError}
             helperText={telefoneError}
-            inputProps={{
-              maxLength: 14
-            }}
+            sx={{ mb: 2 }}
+            placeholder="(00) 00000-0000"
           />
 
           <TextField
