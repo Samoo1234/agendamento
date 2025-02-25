@@ -9,6 +9,7 @@ import DatasDisponiveis from './components/DatasDisponiveis';
 import Clientes from './components/Clientes';
 import GerenciarUsuarios from './components/GerenciarUsuarios';
 import Medicos from './components/Medicos';
+import Cidades from './components/Cidades';
 import Layout from './components/Layout';
 import PrivateRoute from './components/PrivateRoute';
 import { AuthProvider } from './contexts/AuthContext';
@@ -117,6 +118,18 @@ function App() {
                     <InactivityProvider>
                       <Layout>
                         <Medicos />
+                      </Layout>
+                    </InactivityProvider>
+                  </PrivateRoute>
+                }
+              />
+              <Route
+                path="/cidades"
+                element={
+                  <PrivateRoute>
+                    <InactivityProvider>
+                      <Layout>
+                        <Cidades />
                       </Layout>
                     </InactivityProvider>
                   </PrivateRoute>

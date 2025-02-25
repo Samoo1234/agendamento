@@ -20,14 +20,6 @@ import CircularProgress from '@mui/material/CircularProgress';
 import Tooltip from '@mui/material/Tooltip';
 import Typography from '@mui/material/Typography';
 
-const cidades = [
-  'Mantena',
-  'Central de Minas',
-  'Mantenópolis',
-  'Alto Rio Novo',
-  'São João de Mantena'
-];
-
 function DatasDisponiveis() {
   const [cidade, setCidade] = useState('');
   const [data, setData] = useState('');
@@ -38,10 +30,12 @@ function DatasDisponiveis() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [cidades, setCidades] = useState([]);
 
   useEffect(() => {
-    carregarDatas();
+    carregarCidades();
     carregarMedicos();
+    carregarDatas();
   }, []);
 
   useEffect(() => {
@@ -92,6 +86,26 @@ function DatasDisponiveis() {
     } catch (error) {
       console.error('Erro ao carregar médicos:', error);
       setError('Erro ao carregar lista de médicos');
+    }
+  };
+
+  const carregarCidades = async () => {
+    try {
+      const cidadesRef = collection(db, 'cidades');
+      const q = query(cidadesRef);
+      const querySnapshot = await getDocs(q);
+      
+      const dados = querySnapshot.docs
+        .map(doc => ({
+          id: doc.id,
+          ...doc.data()
+        }))
+        .sort((a, b) => a.nome.localeCompare(b.nome));
+      
+      setCidades(dados);
+    } catch (error) {
+      console.error('Erro ao carregar cidades:', error);
+      setError('Erro ao carregar lista de cidades');
     }
   };
 
@@ -256,9 +270,9 @@ function DatasDisponiveis() {
             }
           }}
         >
-          {cidades.map((option) => (
-            <MenuItem key={option} value={option}>
-              {option}
+          {cidades.map((cidade) => (
+            <MenuItem key={cidade.id} value={cidade.nome}>
+              {cidade.nome}
             </MenuItem>
           ))}
         </TextField>
