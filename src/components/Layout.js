@@ -20,6 +20,7 @@ import PeopleIcon from '@mui/icons-material/People';
 import EventAvailableIcon from '@mui/icons-material/EventAvailable';
 import LogoutIcon from '@mui/icons-material/Logout';
 import SettingsIcon from '@mui/icons-material/Settings';
+import LocalHospitalIcon from '@mui/icons-material/LocalHospital';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { Brightness4, Brightness7 } from '@mui/icons-material';
@@ -121,6 +122,11 @@ const menuItems = [
     text: 'Datas Disponíveis',
     icon: <EventAvailableIcon />,
     path: '/datas'
+  },
+  {
+    text: 'Médicos',
+    icon: <LocalHospitalIcon />,
+    path: '/medicos'
   },
   {
     text: 'Clientes',

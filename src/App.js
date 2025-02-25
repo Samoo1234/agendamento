@@ -8,6 +8,7 @@ import DashboardHome from './components/Dashboard';
 import DatasDisponiveis from './components/DatasDisponiveis';
 import Clientes from './components/Clientes';
 import GerenciarUsuarios from './components/GerenciarUsuarios';
+import Medicos from './components/Medicos';
 import Layout from './components/Layout';
 import PrivateRoute from './components/PrivateRoute';
 import { AuthProvider } from './contexts/AuthContext';
@@ -104,6 +105,18 @@ function App() {
                     <InactivityProvider>
                       <Layout>
                         <DatasDisponiveis />
+                      </Layout>
+                    </InactivityProvider>
+                  </PrivateRoute>
+                }
+              />
+              <Route
+                path="/medicos"
+                element={
+                  <PrivateRoute>
+                    <InactivityProvider>
+                      <Layout>
+                        <Medicos />
                       </Layout>
                     </InactivityProvider>
                   </PrivateRoute>
