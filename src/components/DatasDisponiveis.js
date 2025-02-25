@@ -31,14 +31,69 @@ const cidades = [
 function DatasDisponiveis() {
   const [cidade, setCidade] = useState('');
   const [data, setData] = useState('');
+  const [medico, setMedico] = useState('');
   const [datas, setDatas] = useState([]);
+  const [medicos, setMedicos] = useState([]);
+  const [medicosFiltrados, setMedicosFiltrados] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
 
   useEffect(() => {
     carregarDatas();
+    carregarMedicos();
   }, []);
+
+  useEffect(() => {
+    if (cidade) {
+      // Carrega os médicos quando a cidade é selecionada
+      carregarMedicosPorCidade(cidade);
+    } else {
+      setMedicosFiltrados([]);
+      setMedico('');
+    }
+  }, [cidade]);
+
+  const carregarMedicos = async () => {
+    try {
+      const medicosRef = collection(db, 'medicos');
+      const q = query(medicosRef);
+      const querySnapshot = await getDocs(q);
+      
+      const dados = querySnapshot.docs
+        .map(doc => ({
+          id: doc.id,
+          ...doc.data()
+        }))
+        .sort((a, b) => a.nome.localeCompare(b.nome));
+      
+      setMedicos(dados);
+    } catch (error) {
+      console.error('Erro ao carregar médicos:', error);
+    }
+  };
+
+  const carregarMedicosPorCidade = async (cidadeSelecionada) => {
+    try {
+      const medicosRef = collection(db, 'medicos');
+      const q = query(medicosRef);
+      const querySnapshot = await getDocs(q);
+      
+      const dados = querySnapshot.docs
+        .map(doc => ({
+          id: doc.id,
+          ...doc.data()
+        }))
+        .sort((a, b) => a.nome.localeCompare(b.nome));
+
+      console.log('Médicos carregados:', dados); // Debug
+      setMedicos(dados);
+      setMedicosFiltrados(dados); // Mostra todos os médicos já que removemos a cidade do cadastro
+    } catch (error) {
+      console.error('Erro ao carregar médicos:', error);
+      setError('Erro ao carregar lista de médicos');
+    }
+  };
 
   const carregarDatas = async () => {
     try {
@@ -77,7 +132,7 @@ function DatasDisponiveis() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!cidade || !data) {
+    if (!cidade || !data || !medico) {
       setError('Preencha todos os campos');
       return;
     }
@@ -86,19 +141,22 @@ function DatasDisponiveis() {
       setLoading(true);
       setError('');
 
-      // Ajusta a data para o fuso horário local
       const dataLocal = new Date(data + 'T00:00:00');
       const dataFormatada = dataLocal.toLocaleDateString('en-CA');
 
-      // Verificar se a data já existe para esta cidade
       const dataExiste = await verificarDataExistente(cidade, data);
       if (dataExiste) {
         throw new Error('Esta data já está cadastrada para esta cidade');
       }
 
+      // Encontra os dados do médico selecionado
+      const medicoSelecionado = medicos.find(m => m.id === medico);
+
       await addDoc(collection(db, 'datas_disponiveis'), {
         cidade,
         data: dataFormatada,
+        medicoId: medico,
+        medicoNome: medicoSelecionado.nome,
         status: 'disponível',
         criadoEm: new Date()
       });
@@ -106,6 +164,7 @@ function DatasDisponiveis() {
       setSuccess('Data cadastrada com sucesso!');
       setCidade('');
       setData('');
+      setMedico('');
       carregarDatas();
     } catch (error) {
       console.error('Erro ao cadastrar data:', error);
@@ -205,6 +264,28 @@ function DatasDisponiveis() {
         </TextField>
 
         <TextField
+          select
+          label="Médico"
+          value={medico}
+          onChange={(e) => setMedico(e.target.value)}
+          required
+          size="small"
+          disabled={!cidade}
+          sx={{ 
+            minWidth: { xs: '100%', sm: '250px' },
+            '& .MuiInputBase-root': {
+              height: '40px'
+            }
+          }}
+        >
+          {medicosFiltrados.map((medico) => (
+            <MenuItem key={medico.id} value={medico.id}>
+              {medico.nome}
+            </MenuItem>
+          ))}
+        </TextField>
+
+        <TextField
           type="date"
           label="Data"
           value={data}
@@ -249,6 +330,7 @@ function DatasDisponiveis() {
             <TableRow>
               <TableCell>Cidade</TableCell>
               <TableCell>Data</TableCell>
+              <TableCell>Médico</TableCell>
               <TableCell>Status</TableCell>
               <TableCell align="center">Ações</TableCell>
             </TableRow>
@@ -260,6 +342,7 @@ function DatasDisponiveis() {
                 <TableCell>
                   {new Date(data.data + 'T00:00:00').toLocaleDateString('pt-BR')}
                 </TableCell>
+                <TableCell>{data.medicoNome}</TableCell>
                 <TableCell>
                   <Typography
                     component="span"
