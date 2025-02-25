@@ -321,30 +321,7 @@ function Formulario() {
         </Typography>
 
         <form onSubmit={handleSubmit}>
-          <TextField
-            fullWidth
-            label="Nome Completo"
-            value={nome}
-            onChange={(e) => setNome(e.target.value)}
-            margin="normal"
-            required
-          />
-
-          <TextField
-            fullWidth
-            label="Telefone"
-            value={telefone}
-            onChange={handleTelefoneChange}
-            margin="normal"
-            required
-            placeholder="(00)00000-0000"
-            error={!!telefoneError}
-            helperText={telefoneError}
-            inputProps={{
-              maxLength: 14
-            }}
-          />
-
+          {/* 1. Cidade da consulta */}
           <TextField
             fullWidth
             select
@@ -364,6 +341,7 @@ function Formulario() {
             ))}
           </TextField>
 
+          {/* 2. Data da consulta */}
           <TextField
             fullWidth
             select
@@ -387,6 +365,7 @@ function Formulario() {
             ))}
           </TextField>
 
+          {/* 3. Horário da consulta */}
           <TextField
             select
             fullWidth
@@ -395,7 +374,7 @@ function Formulario() {
             onChange={(e) => setHorario(e.target.value)}
             disabled={!data}
             required
-            sx={{ mb: 2 }}
+            margin="normal"
           >
             {horariosDisponiveis.map((hora) => (
               <MenuItem key={hora} value={hora}>
@@ -403,6 +382,32 @@ function Formulario() {
               </MenuItem>
             ))}
           </TextField>
+
+          {/* 4. Nome completo */}
+          <TextField
+            fullWidth
+            label="Nome Completo"
+            value={nome}
+            onChange={(e) => setNome(e.target.value)}
+            margin="normal"
+            required
+          />
+
+          {/* 5. Telefone */}
+          <TextField
+            fullWidth
+            label="Telefone"
+            value={telefone}
+            onChange={handleTelefoneChange}
+            margin="normal"
+            required
+            placeholder="(00)00000-0000"
+            error={!!telefoneError}
+            helperText={telefoneError}
+            inputProps={{
+              maxLength: 14
+            }}
+          />
 
           <TextField
             fullWidth

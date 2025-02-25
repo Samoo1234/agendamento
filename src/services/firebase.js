@@ -1,5 +1,5 @@
 import { initializeApp } from 'firebase/app';
-import { getAuth, setPersistence, browserSessionPersistence } from 'firebase/auth';
+import { getAuth, setPersistence, browserLocalPersistence } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
 import { getFunctions } from 'firebase/functions';
 
@@ -22,8 +22,8 @@ export const auth = getAuth(app);
 export const db = getFirestore(app);
 export const functions = getFunctions(app);
 
-// Configura a persistência para sessão do navegador
-setPersistence(auth, browserSessionPersistence)
+// Configura a persistência para armazenamento local
+setPersistence(auth, browserLocalPersistence)
   .catch((error) => {
     console.error('Erro ao configurar persistência:', error);
   });

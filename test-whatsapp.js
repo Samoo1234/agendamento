@@ -1,20 +1,11 @@
 const fetch = require('node-fetch');
 
-async function sendWhatsAppMessage(toPhoneNumber) {
+async function sendWhatsAppMessage(toPhoneNumber, { nome, data, hora, cidade } = {}) {
   const token = "EAAIj8UCs6L8BO9quBsc0leqkO9ldOR6qgf5Ur0eMG873azXaxFIoxVtoOeqS4Sada0cXxU7k1bbjlxrgZCSs8gCjlwzppXOxCMlFaZAXBP5snVhP6tv6Fl87wvhKYlgJvrWM21TiPZBZBcFtF2nnVEETuRqTZAe2ofoUZAg7F3lnYn3cSXRXbXyb9dwnH9Cr4VpAZDZD";
-  const phoneNumberId = "576714648854724"; // ID do número do WhatsApp Business
+  const phoneNumberId = "576714648854724";
   
-  // Formatar o número do destinatário para o padrão internacional
   const cleanNumber = toPhoneNumber.replace(/[\s\-\(\)]/g, '');
-  // Adicionar o código do país se não estiver presente
   const formattedNumber = cleanNumber.startsWith('55') ? cleanNumber : `55${cleanNumber}`;
-  
-  console.log('Configurações:', {
-    phoneNumberId,
-    businessNumber: '556692582862', // Número que envia
-    toNumber: formattedNumber, // Número que recebe
-    apiVersion: 'v21.0'
-  });
   
   try {
     const url = `https://graph.facebook.com/v21.0/${phoneNumberId}/messages`;
@@ -31,40 +22,37 @@ async function sendWhatsAppMessage(toPhoneNumber) {
           {
             type: "body",
             parameters: [
-              {
-                type: "text",
-                text: "Samoel"
-              }
+              { type: "text", text: nome || "Cliente" },
+              { type: "text", text: data || "00/00/0000" },
+              { type: "text", text: hora || "00:00" },
+              { type: "text", text: cidade || "Não especificada" }
             ]
           }
         ]
       }
     };
-    
-    console.log('URL da requisição:', url);
+
+    console.log('Enviando mensagem para:', formattedNumber);
     console.log('Corpo da requisição:', JSON.stringify(body, null, 2));
 
     const response = await fetch(url, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json',
+        'Content-Type': 'application/json'
       },
       body: JSON.stringify(body)
     });
 
     const data = await response.json();
+    console.log('Resposta completa:', data);
     
     if (!response.ok) {
-      console.error('Erro detalhado:', {
-        status: response.status,
-        statusText: response.statusText,
-        data: data
-      });
-      throw new Error(`Erro na API do WhatsApp: ${JSON.stringify(data)}`);
+      console.error('Erro na resposta:', data);
+      throw new Error(`Erro: ${data.error?.message || 'Desconhecido'}`);
     }
 
-    console.log('Resposta da API:', JSON.stringify(data, null, 2));
+    console.log('Mensagem enviada com sucesso:', data);
     return data;
   } catch (error) {
     console.error('Erro ao enviar mensagem:', error);
@@ -74,18 +62,18 @@ async function sendWhatsAppMessage(toPhoneNumber) {
 
 async function main() {
   try {
-    // Número do cliente que vai receber a mensagem
-    const clientNumber = "66999161540";
+    const testNumber = '6699161540';
+    console.log('Iniciando teste de envio para:', testNumber);
     
-    console.log('Iniciando teste com template de agendamento...');
-    console.log('Usando apenas um parâmetro para teste');
-    
-    const result = await sendWhatsAppMessage(clientNumber);
-    console.log('Mensagem enviada com sucesso:', result);
+    // Teste com dados de exemplo
+    await sendWhatsAppMessage(testNumber, {
+      nome: "João",
+      data: "15/02/2024",
+      hora: "14:30",
+      cidade: "Cuiabá"
+    });
   } catch (error) {
     console.error('Erro no teste:', error);
-  } finally {
-    process.exit(0);
   }
 }
 

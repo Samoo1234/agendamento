@@ -62,6 +62,80 @@ async function sendWhatsAppMessage(phoneNumber, message) {
   }
 }
 
+// Função para enviar mensagem via WhatsApp usando template
+async function sendWhatsAppTemplateMessage(phoneNumber, { nome, data, hora, cidade }) {
+  const config = functions.config();
+  const whatsappToken = config.whatsapp.token;
+  const phoneNumberId = config.whatsapp.phone_id;
+
+  if (!whatsappToken || !phoneNumberId) {
+    console.error('Configurações ausentes:', { whatsappToken: !!whatsappToken, phoneNumberId: !!phoneNumberId });
+    throw new Error('Configurações do WhatsApp não encontradas');
+  }
+
+  // Log do número de telefone antes do envio
+  console.log('Tentando enviar mensagem para:', phoneNumber);
+  
+  try {
+    const url = `https://graph.facebook.com/v17.0/${phoneNumberId}/messages`;
+    console.log('URL da requisição:', url);
+    
+    const body = {
+      messaging_product: "whatsapp",
+      to: phoneNumber,
+      type: "template",
+      template: {
+        name: "template_agendamento",
+        language: {
+          code: "pt_BR"
+        },
+        components: [
+          {
+            type: "body",
+            parameters: [
+              { type: "text", text: nome, key: "nome" },
+              { type: "text", text: data, key: "data" },
+              { type: "text", text: hora, key: "hora" },
+              { type: "text", text: cidade, key: "cidade" }
+            ]
+          }
+        ]
+      }
+    };
+    
+    console.log('Corpo da requisição:', JSON.stringify(body));
+
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${whatsappToken}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(body)
+    });
+
+    const data = await response.json();
+    
+    if (!response.ok) {
+      console.error('Erro na resposta da API:', {
+        status: response.status,
+        statusText: response.statusText,
+        data: data
+      });
+      throw new Error(`Erro na API do WhatsApp: ${data.error?.message || 'Erro desconhecido'}`);
+    }
+
+    console.log('Resposta completa da API:', data);
+    return data;
+  } catch (error) {
+    console.error('Erro detalhado ao enviar mensagem:', {
+      message: error.message,
+      stack: error.stack
+    });
+    throw error;
+  }
+}
+
 // Função para formatar o número de telefone
 function formatPhoneNumber(phone) {
   // Remove todos os caracteres não numéricos
@@ -174,26 +248,28 @@ exports.onAgendamentoAtualizado = functions.firestore
 
 // Cloud Function para notificar agendamento via WhatsApp
 exports.notifyAppointment = functions.https.onCall(async (data, context) => {
-  if (!context.auth) {
-    throw new functions.https.HttpsError('unauthenticated', 'Usuário não autenticado');
-  }
-
-  const { phoneNumber, nome, data: appointmentDate, horario } = data;
-
-  if (!phoneNumber || !nome || !appointmentDate || !horario) {
-    throw new functions.https.HttpsError('invalid-argument', 'Dados incompletos para envio da mensagem');
-  }
-
   try {
+    const { phoneNumber, nome, data: dataAgendamento, horario, cidade } = data;
+    
+    // Formata o número de telefone
     const formattedPhone = formatPhoneNumber(phoneNumber);
-    const message = `Olá ${nome}! Seu agendamento foi confirmado para ${appointmentDate} às ${horario}. Agradecemos a preferência!`;
     
-    await sendWhatsAppMessage(formattedPhone, message);
+    // Formata a data para o formato dd/mm/yyyy
+    const dataParts = dataAgendamento.split('-');
+    const dataFormatada = `${dataParts[2]}/${dataParts[1]}/${dataParts[0]}`;
     
-    return { success: true, message: 'Notificação enviada com sucesso' };
+    // Envia a mensagem usando o template
+    await sendWhatsAppTemplateMessage(formattedPhone, {
+      nome,
+      data: dataFormatada,
+      hora: horario,
+      cidade
+    });
+    
+    return { success: true };
   } catch (error) {
-    console.error('Erro ao enviar notificação:', error);
-    throw new functions.https.HttpsError('internal', 'Erro ao enviar notificação via WhatsApp');
+    console.error('Erro ao notificar agendamento:', error);
+    throw new functions.https.HttpsError('internal', error.message);
   }
 });
 

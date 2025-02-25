@@ -58,7 +58,6 @@ function Agendamentos() {
   const [horarios, setHorarios] = useState([]);
   const [formData, setFormData] = useState({
     nome: '',
-    idade: '',
     cidade: '',
     data: '',
     horario: '',
@@ -170,7 +169,6 @@ function Agendamentos() {
       // Limpar formulário e atualizar lista
       setFormData({
         nome: '',
-        idade: '',
         cidade: '',
         data: '',
         horario: '',
@@ -272,26 +270,7 @@ function Agendamentos() {
         </Typography>
         <form onSubmit={handleSubmit}>
           <Grid container spacing={3}>
-            <Grid item xs={12} sm={6}>
-              <TextField
-                required
-                fullWidth
-                label="Nome"
-                name="nome"
-                value={formData.nome}
-                onChange={handleInputChange}
-              />
-            </Grid>
-            <Grid item xs={12} sm={6}>
-              <TextField
-                required
-                fullWidth
-                label="Idade"
-                name="idade"
-                value={formData.idade}
-                onChange={handleInputChange}
-              />
-            </Grid>
+            {/* 1. Cidade da consulta */}
             <Grid item xs={12} sm={6}>
               <TextField
                 required
@@ -309,6 +288,7 @@ function Agendamentos() {
                 ))}
               </TextField>
             </Grid>
+            {/* 2. Data da consulta */}
             <Grid item xs={12} sm={6}>
               <TextField
                 required
@@ -321,6 +301,7 @@ function Agendamentos() {
                 InputLabelProps={{ shrink: true }}
               />
             </Grid>
+            {/* 3. Horário da consulta */}
             <Grid item xs={12} sm={6}>
               <TextField
                 required
@@ -339,6 +320,18 @@ function Agendamentos() {
                 ))}
               </TextField>
             </Grid>
+            {/* 4. Nome completo */}
+            <Grid item xs={12} sm={6}>
+              <TextField
+                required
+                fullWidth
+                label="Nome"
+                name="nome"
+                value={formData.nome}
+                onChange={handleInputChange}
+              />
+            </Grid>
+            {/* 5. Telefone */}
             <Grid item xs={12} sm={6}>
               <TextField
                 required
