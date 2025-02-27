@@ -424,8 +424,9 @@ function Clientes() {
               minWidth: { xs: '100%', sm: '200px' },
               flex: { sm: 1 }
             }}
+            placeholder="Selecione uma cidade"
           >
-            <MenuItem value="">Todas as cidades</MenuItem>
+            <MenuItem value="">Selecione uma cidade</MenuItem>
             {cidades.map((option) => (
               <MenuItem key={option} value={option}>
                 {option}
@@ -444,8 +445,7 @@ function Clientes() {
               minWidth: { xs: '100%', sm: '200px' },
               flex: { sm: 1 }
             }}
-            helperText={!filtroCidade ? "Selecione uma cidade primeiro" : 
-                       datasDisponiveis.length === 0 ? "Não há datas disponíveis para esta cidade" : ""}
+            helperText={datasDisponiveis.length === 0 && filtroCidade ? "Não há datas disponíveis para esta cidade" : ""}
           >
             <MenuItem value="">Todas as datas</MenuItem>
             {datasDisponiveis.map((data) => (
