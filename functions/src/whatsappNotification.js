@@ -5,6 +5,26 @@ const admin = require('firebase-admin');
 // Não inicializar o app aqui, pois já é inicializado no index.js
 // admin.initializeApp();
 
+// Função para formatar a data de AAAA-MM-DD para DD/MM/AAAA
+function formatarData(dataString) {
+    // Verificar se a data já está no formato DD/MM/AAAA
+    if (dataString.includes('/')) {
+        return dataString; // Já está no formato correto
+    }
+    
+    try {
+        // Tentar converter a data no formato AAAA-MM-DD para DD/MM/AAAA
+        const partes = dataString.split('-');
+        if (partes.length === 3) {
+            return `${partes[2]}/${partes[1]}/${partes[0]}`;
+        }
+        return dataString; // Retornar a string original se não conseguir converter
+    } catch (error) {
+        console.error('Erro ao formatar data:', error);
+        return dataString; // Retornar a string original em caso de erro
+    }
+}
+
 // Função para enviar mensagem via WhatsApp
 exports.sendWhatsAppConfirmation = functions.firestore
     .document('agendamentos/{agendamentoId}')
@@ -23,8 +43,13 @@ exports.sendWhatsAppConfirmation = functions.firestore
             formattedNumber = '55' + formattedNumber;
         }
         
+        // Formatar a data para o formato brasileiro (DD/MM/AAAA)
+        const dataFormatada = formatarData(agendamento.data);
+        
         try {
             console.log('Iniciando envio de notificação WhatsApp para:', formattedNumber);
+            console.log('Data original:', agendamento.data);
+            console.log('Data formatada:', dataFormatada);
             
             // Formatar a mensagem
             const message = {
@@ -46,7 +71,7 @@ exports.sendWhatsAppConfirmation = functions.firestore
                                 },
                                 {
                                     type: "text",
-                                    text: agendamento.data || "Data não especificada"
+                                    text: dataFormatada || "Data não especificada"
                                 },
                                 {
                                     type: "text",
