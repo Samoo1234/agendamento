@@ -55,34 +55,27 @@ exports.sendConfirmationRequests = functions.pubsub.schedule('0 10 * * *')
         // Formata a data para exibição
         const dataFormatada = new Date(agendamento.data).toLocaleDateString('pt-BR');
         
-        // Formata a mensagem interativa com botões
+        // Formata a mensagem com template
         const message = {
           messaging_product: "whatsapp",
           to: numeroCompleto,
-          type: "interactive",
-          interactive: {
-            type: "button",
-            body: {
-              text: `Olá ${agendamento.nome}! Você tem um agendamento amanhã (${dataFormatada}) às ${agendamento.horario} em ${agendamento.cidade}. Por favor, confirme sua presença.`
+          type: "template",
+          template: {
+            name: "confirmacao_agendamento",
+            language: {
+              code: "pt_BR"
             },
-            action: {
-              buttons: [
-                {
-                  type: "reply",
-                  reply: {
-                    id: `confirm_${doc.id}`,
-                    title: "Confirmar"
-                  }
-                },
-                {
-                  type: "reply",
-                  reply: {
-                    id: `cancel_${doc.id}`,
-                    title: "Cancelar"
-                  }
-                }
-              ]
-            }
+            components: [
+              {
+                type: "body",
+                parameters: [
+                  { type: "text", text: agendamento.nome || "Cliente" },
+                  { type: "text", text: dataFormatada || "Data não especificada" },
+                  { type: "text", text: agendamento.horario || "Horário não especificado" },
+                  { type: "text", text: agendamento.cidade || "Não especificada" }
+                ]
+              }
+            ]
           }
         };
         
@@ -155,33 +148,59 @@ exports.processWhatsAppWebhook = functions.https.onRequest(async (req, res) => {
     
     // Extrai a mensagem
     const message = body.entry[0].changes[0].value.messages[0];
-    
-    // Verifica se é uma resposta interativa (botão)
-    if (message.type !== 'interactive' || message.interactive.type !== 'button_reply') {
-      console.log('Mensagem não é uma resposta de botão');
-      res.status(200).send('OK');
-      return;
-    }
-    
-    // Extrai o ID da resposta
-    const buttonId = message.interactive.button_reply.id;
     const telefone = body.entry[0].changes[0].value.contacts[0].wa_id;
     
-    // Verifica se é uma confirmação ou cancelamento
-    if (buttonId.startsWith('confirm_') || buttonId.startsWith('cancel_')) {
-      // Extrai o ID do agendamento
-      const agendamentoId = buttonId.split('_')[1];
-      const isConfirmation = buttonId.startsWith('confirm_');
+    console.log('Mensagem recebida:', JSON.stringify(message));
+    
+    // Processa a resposta baseada no conteúdo da mensagem
+    try {
+      // Busca agendamentos pendentes para este número de telefone
+      const telefoneFormatado = telefone.startsWith('55') ? telefone : `55${telefone}`;
+      const agendamentosRef = admin.firestore().collection('agendamentos');
+      const snapshot = await agendamentosRef
+        .where('telefone', '==', telefoneFormatado)
+        .where('status_confirmacao', '==', 'pendente')
+        .get();
       
-      // Atualiza o status do agendamento
-      const agendamentoRef = admin.firestore().collection('agendamentos').doc(agendamentoId);
-      const agendamentoDoc = await agendamentoRef.get();
-      
-      if (!agendamentoDoc.exists) {
-        console.log('Agendamento não encontrado:', agendamentoId);
+      if (snapshot.empty) {
+        console.log('Nenhum agendamento pendente encontrado para o número:', telefoneFormatado);
         res.status(200).send('OK');
         return;
       }
+      
+      // Pega o agendamento mais próximo (geralmente será o de amanhã)
+      let agendamentoMaisProximo = null;
+      let dataMaisProxima = null;
+      
+      snapshot.forEach(doc => {
+        const agendamento = doc.data();
+        const dataAgendamento = new Date(agendamento.data + 'T00:00:00');
+        
+        if (!dataMaisProxima || dataAgendamento < dataMaisProxima) {
+          dataMaisProxima = dataAgendamento;
+          agendamentoMaisProximo = {
+            id: doc.id,
+            ...agendamento
+          };
+        }
+      });
+      
+      if (!agendamentoMaisProximo) {
+        console.log('Não foi possível determinar o agendamento mais próximo');
+        res.status(200).send('OK');
+        return;
+      }
+      
+      // Processa a resposta com base no conteúdo da mensagem
+      const messageText = message.text?.body?.toLowerCase() || '';
+      const isConfirmation = messageText.includes('sim') || 
+                             messageText.includes('confirmo') || 
+                             messageText.includes('confirmar');
+      const isCancellation = messageText.includes('não') || 
+                             messageText.includes('cancelo') || 
+                             messageText.includes('cancelar');
+      
+      const agendamentoRef = admin.firestore().collection('agendamentos').doc(agendamentoMaisProximo.id);
       
       if (isConfirmation) {
         // Confirma o agendamento
@@ -196,8 +215,8 @@ exports.processWhatsAppWebhook = functions.https.onRequest(async (req, res) => {
           `Obrigado por confirmar seu agendamento. Esperamos você!`
         );
         
-        console.log('Agendamento confirmado:', agendamentoId);
-      } else {
+        console.log('Agendamento confirmado:', agendamentoMaisProximo.id);
+      } else if (isCancellation) {
         // Cancela o agendamento
         await agendamentoRef.update({
           status_confirmacao: 'cancelado',
@@ -210,8 +229,18 @@ exports.processWhatsAppWebhook = functions.https.onRequest(async (req, res) => {
           `Seu agendamento foi cancelado. Se desejar reagendar, entre em contato conosco.`
         );
         
-        console.log('Agendamento cancelado:', agendamentoId);
+        console.log('Agendamento cancelado:', agendamentoMaisProximo.id);
+      } else {
+        // Resposta não reconhecida
+        await enviarMensagemSimples(
+          telefone, 
+          `Não entendemos sua resposta. Por favor, responda com "Sim" para confirmar ou "Não" para cancelar seu agendamento.`
+        );
+        
+        console.log('Resposta não reconhecida para o agendamento:', agendamentoMaisProximo.id);
       }
+    } catch (error) {
+      console.error('Erro ao processar resposta:', error);
     }
     
     res.status(200).send('OK');

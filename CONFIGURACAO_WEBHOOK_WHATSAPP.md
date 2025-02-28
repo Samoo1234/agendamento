@@ -8,6 +8,7 @@ Este documento descreve como configurar o webhook do WhatsApp Business API para 
 2. Aplicativo configurado no Facebook Developer Portal
 3. Número de telefone verificado
 4. Cloud Functions implantadas no Firebase
+5. Template "confirmacao_agendamento" já configurado no WhatsApp Business
 
 ## Passo a Passo
 
@@ -32,22 +33,17 @@ firebase deploy --only functions
    - **Token de Verificação**: `token_secreto_para_verificacao` (ou o token que você definiu)
    - **Campos para Inscrição**: Selecione `messages`
 
-### 3. Criar Template de Mensagem Interativa
+### 3. Verificar o Template de Mensagem
 
-1. Acesse o [WhatsApp Business Platform](https://business.facebook.com/wa/manage/message-templates/)
-2. Clique em "Criar Template"
-3. Selecione a categoria "Utilitário"
-4. Configure o template com botões interativos:
-   - **Nome do Template**: `template_confirmacao`
-   - **Idioma**: Português (Brasil)
-   - **Corpo da Mensagem**: 
-     ```
-     Olá {{1}}! Você tem um agendamento amanhã ({{2}}) às {{3}} em {{4}}. Por favor, confirme sua presença.
-     ```
-   - **Botões**: Adicione dois botões de resposta rápida:
-     - Botão 1: "Confirmar"
-     - Botão 2: "Cancelar"
-5. Envie para aprovação
+O sistema está configurado para usar o template "confirmacao_agendamento" que já existe na sua conta. Certifique-se de que:
+
+1. O template está aprovado e ativo
+2. O template aceita 4 parâmetros na seguinte ordem:
+   - Nome do cliente
+   - Data do agendamento (formato DD/MM/YYYY)
+   - Horário do agendamento
+   - Cidade do agendamento
+3. O template instrui o cliente a responder com "Sim" para confirmar ou "Não" para cancelar
 
 ### 4. Configurar Variáveis de Ambiente
 
@@ -69,10 +65,19 @@ node testar-confirmacao.js
 
 1. A Cloud Function `sendConfirmationRequests` é executada diariamente às 10:00
 2. Ela busca todos os agendamentos para o dia seguinte com status "pendente"
-3. Envia mensagens interativas solicitando confirmação
-4. Quando o cliente responde, o webhook `processWhatsAppWebhook` recebe a resposta
+3. Envia mensagens usando o template "confirmacao_agendamento" solicitando confirmação
+4. Quando o cliente responde com "Sim" ou "Não", o webhook `processWhatsAppWebhook` recebe a resposta
 5. O status do agendamento é atualizado para "confirmado" ou "cancelado"
 6. Uma mensagem de confirmação é enviada ao cliente
+
+## Processamento de Respostas
+
+O sistema está configurado para entender várias formas de resposta:
+
+- **Confirmação**: "sim", "confirmo", "confirmar"
+- **Cancelamento**: "não", "cancelo", "cancelar"
+
+Se o cliente enviar uma resposta que não seja reconhecida, o sistema enviará uma mensagem pedindo para responder com "Sim" ou "Não".
 
 ## Solução de Problemas
 
@@ -85,11 +90,11 @@ node testar-confirmacao.js
 ### Mensagens não estão sendo enviadas
 
 1. Verifique se o token de acesso está válido
-2. Confirme que o template foi aprovado
+2. Confirme que o template está aprovado e ativo
 3. Verifique os logs da Cloud Function para identificar erros
 
 ### Status não está sendo atualizado
 
-1. Verifique se o ID do agendamento está sendo extraído corretamente
-2. Confirme que o documento existe no Firestore
+1. Verifique se o número de telefone está no formato correto no Firestore
+2. Confirme que existem agendamentos com status "pendente"
 3. Verifique os logs da Cloud Function para identificar erros
