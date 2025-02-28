@@ -18,7 +18,8 @@ import {
   Alert,
   CircularProgress,
   useTheme,
-  useMediaQuery
+  useMediaQuery,
+  Chip
 } from '@mui/material';
 import PictureAsPdfIcon from '@mui/icons-material/PictureAsPdf';
 import Brightness4Icon from '@mui/icons-material/Brightness4';
@@ -50,6 +51,7 @@ function Clientes() {
   const [clientes, setClientes] = useState([]);
   const [filtroCidade, setFiltroCidade] = useState('');
   const [filtroPeriodo, setFiltroPeriodo] = useState('');
+  const [filtroStatus, setFiltroStatus] = useState('');
   const [selectedDate, setSelectedDate] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -174,6 +176,9 @@ function Clientes() {
         if (filtroPeriodo) {
           return cliente.data === filtroPeriodo;
         }
+        if (filtroStatus && cliente.status_confirmacao !== filtroStatus) {
+          return false;
+        }
         return true;
       })
       .sort((a, b) => {
@@ -245,7 +250,8 @@ function Clientes() {
           { header: 'Data', dataKey: 'data' },
           { header: 'Horário', dataKey: 'horario' },
           { header: 'Telefone', dataKey: 'telefone' },
-          { header: 'Descrição', dataKey: 'descricao' }
+          { header: 'Descrição', dataKey: 'descricao' },
+          { header: 'Status', dataKey: 'status' }
         ];
 
         // Pegar os dados já ordenados da função filtrarClientes
@@ -258,7 +264,8 @@ function Clientes() {
           data: new Date(cliente.data + 'T00:00:00').toLocaleDateString('pt-BR'),
           horario: cliente.horario,
           telefone: cliente.telefone || 'Não informado',
-          descricao: cliente.descricao || ''
+          descricao: cliente.descricao || '',
+          status: cliente.status_confirmacao || 'Pendente'
         }));
 
         // Configurações da tabela (ajustada para começar após o título)
@@ -275,7 +282,8 @@ function Clientes() {
             data: { cellWidth: 25 },
             horario: { cellWidth: 20 },
             telefone: { cellWidth: 35 },
-            descricao: { cellWidth: 'auto' }
+            descricao: { cellWidth: 'auto' },
+            status: { cellWidth: 20 }
           },
           headStyles: {
             fillColor: [6, 9, 80], // #060950
@@ -321,7 +329,8 @@ function Clientes() {
       { header: 'Data', dataKey: 'data' },
       { header: 'Horário', dataKey: 'horario' },
       { header: 'Telefone', dataKey: 'telefone' },
-      { header: 'Descrição', dataKey: 'descricao' }
+      { header: 'Descrição', dataKey: 'descricao' },
+      { header: 'Status', dataKey: 'status' }
     ];
 
     // Pegar os dados já ordenados da função filtrarClientes
@@ -334,7 +343,8 @@ function Clientes() {
       data: new Date(cliente.data + 'T00:00:00').toLocaleDateString('pt-BR'),
       horario: cliente.horario,
       telefone: cliente.telefone || 'Não informado',
-      descricao: cliente.descricao || ''
+      descricao: cliente.descricao || '',
+      status: cliente.status_confirmacao || 'Pendente'
     }));
 
     // Configurações da tabela
@@ -351,7 +361,8 @@ function Clientes() {
         data: { cellWidth: 25 },
         horario: { cellWidth: 20 },
         telefone: { cellWidth: 35 },
-        descricao: { cellWidth: 'auto' }
+        descricao: { cellWidth: 'auto' },
+        status: { cellWidth: 20 }
       },
       headStyles: {
         fillColor: [6, 9, 80], // #060950
@@ -388,6 +399,21 @@ function Clientes() {
         setSnackbarSeverity('error');
         setOpenSnackbar(true);
       }
+    }
+  };
+
+  // Função para renderizar o chip de status
+  const renderStatusChip = (status) => {
+    if (!status) return <Chip size="small" label="Pendente" color="default" />;
+    
+    switch (status) {
+      case 'confirmado':
+        return <Chip size="small" label="Confirmado" color="success" />;
+      case 'cancelado':
+        return <Chip size="small" label="Cancelado" color="error" />;
+      case 'pendente':
+      default:
+        return <Chip size="small" label="Pendente" color="warning" />;
     }
   };
 
@@ -454,6 +480,23 @@ function Clientes() {
               </MenuItem>
             ))}
           </TextField>
+
+          <TextField
+            select
+            label="Status"
+            value={filtroStatus}
+            onChange={(e) => setFiltroStatus(e.target.value)}
+            size="small"
+            sx={{ 
+              minWidth: { xs: '100%', sm: '200px' },
+              flex: { sm: 1 }
+            }}
+          >
+            <MenuItem value="">Todos os status</MenuItem>
+            <MenuItem value="pendente">Pendente</MenuItem>
+            <MenuItem value="confirmado">Confirmado</MenuItem>
+            <MenuItem value="cancelado">Cancelado</MenuItem>
+          </TextField>
         </Box>
 
         <TableContainer 
@@ -475,6 +518,7 @@ function Clientes() {
                 <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>Data</TableCell>
                 <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>Horário</TableCell>
                 <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>Descrição</TableCell>
+                <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>Status</TableCell>
                 <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>Ações</TableCell>
               </TableRow>
             </TableHead>
@@ -486,6 +530,7 @@ function Clientes() {
                   <TableCell>{formatarData(cliente.data)}</TableCell>
                   <TableCell>{cliente.horario || ''}</TableCell>
                   <TableCell>{cliente.descricao || ''}</TableCell>
+                  <TableCell>{renderStatusChip(cliente.status_confirmacao)}</TableCell>
                   <TableCell>
                     <IconButton onClick={() => handleDelete(cliente.id)}>
                       <DeleteIcon />
