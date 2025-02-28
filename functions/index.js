@@ -150,6 +150,12 @@ function formatPhoneNumber(phone) {
   return `+55${cleaned}`;
 }
 
+// Importar a função de notificação do WhatsApp
+const whatsappNotification = require('./src/whatsappNotification');
+
+// Exportar a função de notificação do WhatsApp
+exports.sendWhatsAppConfirmation = whatsappNotification.sendWhatsAppConfirmation;
+
 exports.deleteUser = functions.https.onCall(async (data, context) => {
   // Verificar se o chamador é um administrador
   if (!context.auth) {
