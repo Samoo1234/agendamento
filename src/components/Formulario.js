@@ -16,8 +16,9 @@ import Brightness4Icon from '@mui/icons-material/Brightness4';
 import Brightness7Icon from '@mui/icons-material/Brightness7';
 import { useTheme } from '@mui/material/styles';
 import { ColorModeContext } from '../App';
-import { db } from '../services/firebase';
+import { db, functions } from '../services/firebase';
 import { collection, addDoc, query, where, getDocs, Timestamp } from 'firebase/firestore';
+import { httpsCallable } from 'firebase/functions';
 
 const cidades = [
   'Mantena',
@@ -27,32 +28,68 @@ const cidades = [
   'São João de Mantena'
 ];
 
-// Função para gerar horários disponíveis
-const gerarHorarios = () => {
+// Função para gerar horários disponíveis com base nas configurações
+const gerarHorarios = (periodoManha, periodoTarde, intervalo) => {
   const horarios = [];
+  const intervaloDuracao = intervalo || 10;
   
-  // Horários da manhã (09:00 às 12:00)
-  for (let hora = 9; hora < 12; hora++) {
-    for (let minuto = 0; minuto < 60; minuto += 10) {
-      horarios.push(
-        `${hora.toString().padStart(2, '0')}:${minuto.toString().padStart(2, '0')}`
-      );
+  // Função auxiliar para converter horário (HH:MM) para minutos
+  const converterParaMinutos = (horario) => {
+    const [horas, minutos] = horario.split(':').map(Number);
+    return horas * 60 + minutos;
+  };
+  
+  // Função auxiliar para converter minutos para horário (HH:MM)
+  const converterParaHorario = (minutos) => {
+    const horas = Math.floor(minutos / 60);
+    const mins = minutos % 60;
+    return `${horas.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}`;
+  };
+  
+  // Gerar horários para o período da manhã (se estiver definido)
+  if (periodoManha && periodoManha.inicio && periodoManha.fim) {
+    const inicioManha = converterParaMinutos(periodoManha.inicio);
+    const fimManha = converterParaMinutos(periodoManha.fim);
+    
+    for (let minutos = inicioManha; minutos < fimManha; minutos += intervaloDuracao) {
+      horarios.push(converterParaHorario(minutos));
     }
   }
   
-  // Horários da tarde (14:00 às 17:00)
-  for (let hora = 14; hora < 17; hora++) {
-    for (let minuto = 0; minuto < 60; minuto += 10) {
-      horarios.push(
-        `${hora.toString().padStart(2, '0')}:${minuto.toString().padStart(2, '0')}`
-      );
+  // Gerar horários para o período da tarde (se estiver definido)
+  if (periodoTarde && periodoTarde.inicio && periodoTarde.fim) {
+    const inicioTarde = converterParaMinutos(periodoTarde.inicio);
+    const fimTarde = converterParaMinutos(periodoTarde.fim);
+    
+    for (let minutos = inicioTarde; minutos < fimTarde; minutos += intervaloDuracao) {
+      horarios.push(converterParaHorario(minutos));
+    }
+  }
+  
+  // Se nenhum período foi definido, usar valores padrão
+  if (horarios.length === 0) {
+    // Período da manhã padrão (09:00 às 12:00)
+    const inicioPadrao = converterParaMinutos('09:00');
+    const fimPadrao = converterParaMinutos('12:00');
+    
+    for (let minutos = inicioPadrao; minutos < fimPadrao; minutos += intervaloDuracao) {
+      horarios.push(converterParaHorario(minutos));
+    }
+    
+    // Período da tarde padrão (14:00 às 17:00)
+    const inicioPadraoTarde = converterParaMinutos('14:00');
+    const fimPadraoTarde = converterParaMinutos('17:00');
+    
+    for (let minutos = inicioPadraoTarde; minutos < fimPadraoTarde; minutos += intervaloDuracao) {
+      horarios.push(converterParaHorario(minutos));
     }
   }
   
   return horarios;
 };
 
-const horarios = gerarHorarios();
+// Gerar horários padrão para uso inicial
+const horariosPadrao = gerarHorarios();
 
 function Formulario() {
   const navigate = useNavigate();
@@ -68,7 +105,8 @@ function Formulario() {
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState('');
   const [datasDisponiveis, setDatasDisponiveis] = useState([]);
-  const [horariosDisponiveis, setHorariosDisponiveis] = useState(horarios);
+  const [horariosDisponiveis, setHorariosDisponiveis] = useState(horariosPadrao);
+  const [dataConfig, setDataConfig] = useState(null);
   const theme = useTheme();
   const colorMode = useContext(ColorModeContext);
 
@@ -85,7 +123,7 @@ function Formulario() {
       carregarHorariosDisponiveis(cidade, data);
       carregarMedicoInfo(cidade, data);
     } else {
-      setHorariosDisponiveis(horarios);
+      setHorariosDisponiveis(horariosPadrao);
       setMedicoNome('');
     }
   }, [cidade, data]);
@@ -149,6 +187,26 @@ function Formulario() {
       const dataLocal = new Date(dataSelecionada + 'T00:00:00');
       const dataFormatada = dataLocal.toLocaleDateString('en-CA');
 
+      // Buscar a configuração da data selecionada
+      const datasRef = collection(db, 'datas_disponiveis');
+      const qConfig = query(
+        datasRef,
+        where('cidade', '==', cidadeSelecionada),
+        where('data', '==', dataFormatada)
+      );
+      const configSnapshot = await getDocs(qConfig);
+      
+      let config = null;
+      if (!configSnapshot.empty) {
+        config = configSnapshot.docs[0].data();
+        setDataConfig(config);
+      }
+
+      // Gerar horários com base na configuração
+      const todosHorarios = config ? 
+        gerarHorarios(config.periodoManha, config.periodoTarde, config.intervalo) : 
+        horariosPadrao;
+
       const agendamentosRef = collection(db, 'agendamentos');
       const q = query(
         agendamentosRef,
@@ -161,7 +219,7 @@ function Formulario() {
       const horariosOcupados = querySnapshot.docs.map(doc => doc.data().horario);
       
       // Filtrar horários disponíveis
-      const horariosLivres = horarios.filter(horario => !horariosOcupados.includes(horario));
+      const horariosLivres = todosHorarios.filter(horario => !horariosOcupados.includes(horario));
       
       setHorariosDisponiveis(horariosLivres);
     } catch (error) {
@@ -285,7 +343,8 @@ function Formulario() {
 
       const telefoneWhatsApp = telefone ? formatarTelefoneParaWhatsApp(telefone) : '';
 
-      await addDoc(collection(db, 'agendamentos'), {
+      // Adicionar o agendamento ao Firestore
+      const docRef = await addDoc(collection(db, 'agendamentos'), {
         nome: nome.trim(),
         telefone: telefoneWhatsApp,
         cidade,
@@ -295,6 +354,31 @@ function Formulario() {
         criadoEm: Timestamp.now(),
         status: 'pendente'
       });
+
+      console.log('Agendamento criado com ID:', docRef.id);
+
+      // Enviar notificação por WhatsApp se tiver telefone
+      if (telefoneWhatsApp) {
+        try {
+          // Formatar a data para exibição
+          const dataFormatadaBR = new Date(dataFormatada).toLocaleDateString('pt-BR');
+          
+          // Chamar a Cloud Function para enviar a mensagem
+          const sendWhatsAppConfirmation = httpsCallable(functions, 'sendWhatsAppConfirmation');
+          const resultado = await sendWhatsAppConfirmation({
+            telefone: telefoneWhatsApp,
+            nome: nome.trim(),
+            data: dataFormatadaBR,
+            horario: horario,
+            cidade: cidade
+          });
+          
+          console.log('Notificação WhatsApp enviada:', resultado.data);
+        } catch (whatsappError) {
+          // Não interrompe o fluxo se falhar o envio da mensagem
+          console.error('Erro ao enviar notificação WhatsApp:', whatsappError);
+        }
+      }
 
       setSuccess(true);
       setNome('');

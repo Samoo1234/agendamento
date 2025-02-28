@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { db } from '../services/firebase';
-import { collection, addDoc, query, getDocs, doc, deleteDoc, where } from 'firebase/firestore';
+import { collection, addDoc, query, getDocs, doc, deleteDoc, where, updateDoc } from 'firebase/firestore';
 import Box from '@mui/material/Box';
 import Paper from '@mui/material/Paper';
 import TextField from '@mui/material/TextField';
@@ -19,6 +19,17 @@ import Snackbar from '@mui/material/Snackbar';
 import CircularProgress from '@mui/material/CircularProgress';
 import Tooltip from '@mui/material/Tooltip';
 import Typography from '@mui/material/Typography';
+import SettingsIcon from '@mui/icons-material/Settings';
+import Dialog from '@mui/material/Dialog';
+import DialogActions from '@mui/material/DialogActions';
+import DialogContent from '@mui/material/DialogContent';
+import DialogTitle from '@mui/material/DialogTitle';
+import FormControl from '@mui/material/FormControl';
+import InputLabel from '@mui/material/InputLabel';
+import Select from '@mui/material/Select';
+import Grid from '@mui/material/Grid';
+import Switch from '@mui/material/Switch';
+import FormControlLabel from '@mui/material/FormControlLabel';
 
 function DatasDisponiveis() {
   const [cidade, setCidade] = useState('');
@@ -31,6 +42,10 @@ function DatasDisponiveis() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [cidades, setCidades] = useState([]);
+  
+  // Estados para o diálogo de configuração de horários
+  const [openDialog, setOpenDialog] = useState(false);
+  const [selectedData, setSelectedData] = useState(null);
 
   useEffect(() => {
     carregarCidades();
@@ -122,7 +137,11 @@ function DatasDisponiveis() {
       const dados = querySnapshot.docs
         .map(doc => ({
           id: doc.id,
-          ...doc.data()
+          ...doc.data(),
+          // Valores padrão para períodos de atendimento caso não existam
+          periodoManha: doc.data().periodoManha || { inicio: '09:00', fim: '12:00' },
+          periodoTarde: doc.data().periodoTarde || { inicio: '14:00', fim: '17:00' },
+          intervalo: doc.data().intervalo || 10
         }))
         .filter(data => {
           const dataAgendamento = new Date(data.data + 'T00:00:00');
@@ -166,13 +185,18 @@ function DatasDisponiveis() {
       // Encontra os dados do médico selecionado
       const medicoSelecionado = medicos.find(m => m.id === medico);
 
+      // Adiciona os períodos de atendimento padrão
       await addDoc(collection(db, 'datas_disponiveis'), {
         cidade,
         data: dataFormatada,
         medicoId: medico,
         medicoNome: medicoSelecionado.nome,
         status: 'disponível',
-        criadoEm: new Date()
+        criadoEm: new Date(),
+        // Adiciona os períodos de atendimento padrão
+        periodoManha: { inicio: '09:00', fim: '12:00' },
+        periodoTarde: { inicio: '14:00', fim: '17:00' },
+        intervalo: 10 // em minutos
       });
       
       setSuccess('Data cadastrada com sucesso!');
@@ -211,6 +235,194 @@ function DatasDisponiveis() {
     );
     const querySnapshot = await getDocs(q);
     return !querySnapshot.empty;
+  };
+
+  // Componente para configurar os horários de uma data
+  function ConfigurarHorariosDialog({ open, onClose, data }) {
+    const [periodoManha, setPeriodoManha] = useState({ inicio: '09:00', fim: '12:00' });
+    const [periodoTarde, setPeriodoTarde] = useState({ inicio: '14:00', fim: '17:00' });
+    const [intervalo, setIntervalo] = useState(10);
+    const [ativarManha, setAtivarManha] = useState(true);
+    const [ativarTarde, setAtivarTarde] = useState(true);
+
+    useEffect(() => {
+      if (data) {
+        // Carregar configurações existentes
+        if (data.periodoManha) {
+          setPeriodoManha(data.periodoManha);
+          setAtivarManha(true);
+        } else {
+          setAtivarManha(false);
+        }
+        
+        if (data.periodoTarde) {
+          setPeriodoTarde(data.periodoTarde);
+          setAtivarTarde(true);
+        } else {
+          setAtivarTarde(false);
+        }
+        
+        if (data.intervalo) {
+          setIntervalo(data.intervalo);
+        }
+      }
+    }, [data]);
+
+    const handleSalvar = () => {
+      // Preparar os dados para salvar
+      const dadosAtualizados = {
+        ...data,
+        periodoManha: ativarManha ? periodoManha : null,
+        periodoTarde: ativarTarde ? periodoTarde : null,
+        intervalo: intervalo
+      };
+      
+      onClose(dadosAtualizados);
+    };
+
+    return (
+      <Dialog open={open} onClose={() => onClose(null)} maxWidth="sm" fullWidth>
+        <DialogTitle>
+          Configurar Horários de Atendimento
+        </DialogTitle>
+        <DialogContent>
+          <Typography variant="subtitle1" gutterBottom>
+            {data?.cidade} - {data?.dataFormatada}
+          </Typography>
+          
+          <FormControlLabel
+            control={
+              <Switch
+                checked={ativarManha}
+                onChange={(e) => setAtivarManha(e.target.checked)}
+                color="primary"
+              />
+            }
+            label="Período da Manhã"
+          />
+          
+          {ativarManha && (
+            <Box sx={{ mb: 3, mt: 1, ml: 4 }}>
+              <Grid container spacing={2}>
+                <Grid item xs={6}>
+                  <TextField
+                    label="Início"
+                    type="time"
+                    value={periodoManha.inicio}
+                    onChange={(e) => setPeriodoManha({ ...periodoManha, inicio: e.target.value })}
+                    InputLabelProps={{ shrink: true }}
+                    inputProps={{ step: 300 }}
+                    fullWidth
+                  />
+                </Grid>
+                <Grid item xs={6}>
+                  <TextField
+                    label="Fim"
+                    type="time"
+                    value={periodoManha.fim}
+                    onChange={(e) => setPeriodoManha({ ...periodoManha, fim: e.target.value })}
+                    InputLabelProps={{ shrink: true }}
+                    inputProps={{ step: 300 }}
+                    fullWidth
+                  />
+                </Grid>
+              </Grid>
+            </Box>
+          )}
+          
+          <FormControlLabel
+            control={
+              <Switch
+                checked={ativarTarde}
+                onChange={(e) => setAtivarTarde(e.target.checked)}
+                color="primary"
+              />
+            }
+            label="Período da Tarde"
+          />
+          
+          {ativarTarde && (
+            <Box sx={{ mb: 3, mt: 1, ml: 4 }}>
+              <Grid container spacing={2}>
+                <Grid item xs={6}>
+                  <TextField
+                    label="Início"
+                    type="time"
+                    value={periodoTarde.inicio}
+                    onChange={(e) => setPeriodoTarde({ ...periodoTarde, inicio: e.target.value })}
+                    InputLabelProps={{ shrink: true }}
+                    inputProps={{ step: 300 }}
+                    fullWidth
+                  />
+                </Grid>
+                <Grid item xs={6}>
+                  <TextField
+                    label="Fim"
+                    type="time"
+                    value={periodoTarde.fim}
+                    onChange={(e) => setPeriodoTarde({ ...periodoTarde, fim: e.target.value })}
+                    InputLabelProps={{ shrink: true }}
+                    inputProps={{ step: 300 }}
+                    fullWidth
+                  />
+                </Grid>
+              </Grid>
+            </Box>
+          )}
+          
+          <Box sx={{ mt: 3 }}>
+            <FormControl fullWidth>
+              <InputLabel id="intervalo-label">Intervalo entre Horários</InputLabel>
+              <Select
+                labelId="intervalo-label"
+                value={intervalo}
+                onChange={(e) => setIntervalo(e.target.value)}
+                label="Intervalo entre Horários"
+              >
+                <MenuItem value={5}>5 minutos</MenuItem>
+                <MenuItem value={10}>10 minutos</MenuItem>
+                <MenuItem value={15}>15 minutos</MenuItem>
+                <MenuItem value={20}>20 minutos</MenuItem>
+                <MenuItem value={30}>30 minutos</MenuItem>
+                <MenuItem value={60}>60 minutos</MenuItem>
+              </Select>
+            </FormControl>
+          </Box>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => onClose(null)}>Cancelar</Button>
+          <Button onClick={handleSalvar} variant="contained" color="primary">
+            Salvar
+          </Button>
+        </DialogActions>
+      </Dialog>
+    );
+  }
+
+  // Função para abrir o diálogo de configuração de horários
+  const handleOpenConfig = (data) => {
+    setSelectedData(data);
+    setOpenDialog(true);
+  };
+
+  // Função para salvar a configuração de horários
+  const handleSaveConfig = async (data) => {
+    try {
+      if (!selectedData) return;
+      
+      await updateDoc(doc(db, 'datas_disponiveis', selectedData.id), {
+        periodoManha: data.periodoManha,
+        periodoTarde: data.periodoTarde,
+        intervalo: data.intervalo
+      });
+      
+      setSuccess('Configuração de horários atualizada com sucesso!');
+      setOpenDialog(false);
+      carregarDatas();
+    } catch (error) {
+      console.error('Erro ao atualizar configuração de horários:', error);
+      setError('Erro ao atualizar configuração de horários');
+    }
   };
 
   if (loading && datas.length === 0) {
@@ -369,6 +581,11 @@ function DatasDisponiveis() {
                   </Typography>
                 </TableCell>
                 <TableCell align="center">
+                  <Tooltip title="Configurar Horários">
+                    <IconButton onClick={() => handleOpenConfig(data)} color="primary" sx={{ mr: 1 }}>
+                      <SettingsIcon />
+                    </IconButton>
+                  </Tooltip>
                   <Tooltip title="Excluir">
                     <IconButton onClick={() => handleDelete(data.id)} color="error">
                       <DeleteIcon />
@@ -380,6 +597,19 @@ function DatasDisponiveis() {
           </TableBody>
         </Table>
       </TableContainer>
+
+      {/* Diálogo para configuração de horários */}
+      <ConfigurarHorariosDialog 
+        open={openDialog} 
+        onClose={(data) => {
+          if (data) {
+            handleSaveConfig(data);
+          } else {
+            setOpenDialog(false);
+          }
+        }} 
+        data={selectedData} 
+      />
     </Box>
   );
 }
