@@ -15,7 +15,7 @@ exports.sendWhatsAppConfirmation = functions.https.onCall(async (data, context) 
     // Configurações do WhatsApp Business API
     const token = process.env.WHATSAPP_TOKEN || "EAAIj8UCs6L8BO9quBsc0leqkO9ldOR6qgf5Ur0eMG873azXaxFIoxVtoOeqS4Sada0cXxU7k1bbjlxrgZCSs8gCjlwzppXOxCMlFaZAXBP5snVhP6tv6Fl87wvhKYlgJvrWM21TiPZBZBcFtF2nnVEETuRqTZAe2ofoUZAg7F3lnYn3cSXRXbXyb9dwnH9Cr4VpAZDZD";
     const phoneNumberId = process.env.WHATSAPP_PHONE_ID || "576714648854724";
-    const version = 'v21.0';
+    const version = 'v22.0';
     
     // Extrai os dados do agendamento
     const { telefone, nome, data, horario, cidade } = data;
@@ -108,7 +108,7 @@ exports.sendWhatsAppReminder = functions.https.onCall(async (data, context) => {
     // Configurações do WhatsApp Business API
     const token = process.env.WHATSAPP_TOKEN || "EAAIj8UCs6L8BO9quBsc0leqkO9ldOR6qgf5Ur0eMG873azXaxFIoxVtoOeqS4Sada0cXxU7k1bbjlxrgZCSs8gCjlwzppXOxCMlFaZAXBP5snVhP6tv6Fl87wvhKYlgJvrWM21TiPZBZBcFtF2nnVEETuRqTZAe2ofoUZAg7F3lnYn3cSXRXbXyb9dwnH9Cr4VpAZDZD";
     const phoneNumberId = process.env.WHATSAPP_PHONE_ID || "576714648854724";
-    const version = 'v21.0';
+    const version = 'v22.0';
     
     // Extrai os dados do agendamento
     const { telefone, nome, data, horario, cidade } = data;
@@ -255,6 +255,45 @@ exports.sendDailyReminders = functions.pubsub.schedule('0 10 * * *')
     }
   });
 
+// Função HTTP específica para o webhook do WhatsApp
+exports.whatsappWebhookHandler = functions.https.onRequest((req, res) => {
+  console.log('Recebida solicitação no webhook do WhatsApp');
+  console.log('Método:', req.method);
+  console.log('Query:', req.query);
+  
+  if (req.method === 'GET') {
+    // Verificação do webhook pelo WhatsApp
+    const mode = req.query['hub.mode'];
+    const token = req.query['hub.verify_token'];
+    const challenge = req.query['hub.challenge'];
+    
+    console.log('Modo:', mode);
+    console.log('Token:', token);
+    console.log('Challenge:', challenge);
+    
+    const verifyToken = '8255b4471f00fc2205629c12de1addfec4cdcb9e0f921bc9e2989574edd02821';
+    
+    if (mode === 'subscribe' && token === verifyToken) {
+      console.log('Webhook verificado com sucesso');
+      res.status(200).send(challenge);
+    } else {
+      console.log('Falha na verificação do webhook');
+      res.status(403).send('Forbidden');
+    }
+  } else if (req.method === 'POST') {
+    // Processamento de mensagens
+    console.log('Corpo da solicitação:', req.body);
+    res.status(200).send('EVENT_RECEIVED');
+  } else {
+    res.status(405).send('Method Not Allowed');
+  }
+});
+
+// Função HTTP simples para teste
+exports.testeWebhook = functions.https.onRequest((req, res) => {
+  res.status(200).send('Função de teste funcionando!');
+});
+
 // Exporta a função de notificação existente
 const whatsappNotification = require('./whatsappNotification');
 exports.sendWhatsAppConfirmationOnCreate = whatsappNotification.sendWhatsAppConfirmation;
@@ -262,6 +301,6 @@ exports.sendWhatsAppConfirmationOnCreate = whatsappNotification.sendWhatsAppConf
 // Importa e exporta as funções do sistema de confirmação
 const confirmationSystem = require('./confirmationSystem');
 exports.sendConfirmationRequests = confirmationSystem.sendConfirmationRequests;
-exports.processWhatsAppWebhook = confirmationSystem.processWhatsAppWebhook;
+exports.whatsAppWebhook = confirmationSystem.processWhatsAppWebhook;
 exports.updateConfirmationStatus = confirmationSystem.updateConfirmationStatus;
 exports.initConfirmationStatus = confirmationSystem.initConfirmationStatus;

@@ -11,8 +11,8 @@ exports.sendConfirmationRequests = functions.pubsub.schedule('0 10 * * *')
   .onRun(async (context) => {
     try {
       // Configurações do WhatsApp Business API
-      const token = process.env.WHATSAPP_TOKEN || "EAAIj8UCs6L8BO9quBsc0leqkO9ldOR6qgf5Ur0eMG873azXaxFIoxVtoOeqS4Sada0cXxU7k1bbjlxrgZCSs8gCjlwzppXOxCMlFaZAXBP5snVhP6tv6Fl87wvhKYlgJvrWM21TiPZBZBcFtF2nnVEETuRqTZAe2ofoUZAg7F3lnYn3cSXRXbXyb9dwnH9Cr4VpAZDZD";
-      const phoneNumberId = process.env.WHATSAPP_PHONE_ID || "576714648854724";
+      const token = functions.config().whatsapp?.token || "EAAIj8UCs6L8BO9quBsc0leqkO9ldOR6qgf5Ur0eMG873azXaxFIoxVtoOeqS4Sada0cXxU7k1bbjlxrgZCSs8gCjlwzppXOxCMlFaZAXBP5snVhP6tv6Fl87wvhKYlgJvrWM21TiPZBZBcFtF2nnVEETuRqTZAe2ofoUZAg7F3lnYn3cSXRXbXyb9dwnH9Cr4VpAZDZD";
+      const phoneNumberId = functions.config().whatsapp?.phone_id || "576714648854724";
       const version = 'v21.0';
       
       // Calcula a data de amanhã
@@ -123,14 +123,16 @@ exports.processWhatsAppWebhook = functions.https.onRequest(async (req, res) => {
       const challenge = req.query['hub.challenge'];
       
       // Verifica se o token é válido (deve ser configurado no painel do WhatsApp)
-      const verifyToken = process.env.WHATSAPP_VERIFY_TOKEN || 'token_secreto_para_verificacao';
+      const verifyToken = functions.config().whatsapp?.verify_token || 'token_secreto_para_verificacao';
+      
+      console.log('Verificando webhook - Mode:', mode, 'Token recebido:', token, 'Token esperado:', verifyToken);
       
       if (mode === 'subscribe' && token === verifyToken) {
         console.log('Webhook verificado com sucesso');
         res.status(200).send(challenge);
         return;
       } else {
-        console.error('Falha na verificação do webhook');
+        console.error('Falha na verificação do webhook. Token recebido:', token, 'Token esperado:', verifyToken);
         res.status(403).send('Verificação falhou');
         return;
       }
@@ -191,14 +193,32 @@ exports.processWhatsAppWebhook = functions.https.onRequest(async (req, res) => {
         return;
       }
       
-      // Processa a resposta com base no conteúdo da mensagem
-      const messageText = message.text?.body?.toLowerCase() || '';
-      const isConfirmation = messageText.includes('sim') || 
-                             messageText.includes('confirmo') || 
-                             messageText.includes('confirmar');
-      const isCancellation = messageText.includes('não') || 
-                             messageText.includes('cancelo') || 
-                             messageText.includes('cancelar');
+      // Determina se é uma confirmação ou cancelamento
+      let isConfirmation = false;
+      let isCancellation = false;
+      
+      // Verifica se é uma resposta interativa (botão)
+      if (message.type === 'interactive' && message.interactive.type === 'button_reply') {
+        const buttonId = message.interactive.button_reply.id;
+        const buttonText = message.interactive.button_reply.title;
+        
+        console.log('Resposta de botão recebida:', buttonId, buttonText);
+        
+        isConfirmation = buttonId === 'yes' || buttonId === 'sim' || buttonText.toLowerCase() === 'sim';
+        isCancellation = buttonId === 'no' || buttonId === 'nao' || buttonId === 'não' || buttonText.toLowerCase() === 'não';
+      } 
+      // Verifica se é uma resposta de texto
+      else if (message.type === 'text' && message.text && message.text.body) {
+        const messageText = message.text.body.toLowerCase();
+        
+        isConfirmation = messageText.includes('sim') || 
+                         messageText.includes('confirmo') || 
+                         messageText.includes('confirmar');
+        isCancellation = messageText.includes('não') || 
+                         messageText.includes('nao') ||
+                         messageText.includes('cancelo') || 
+                         messageText.includes('cancelar');
+      }
       
       const agendamentoRef = admin.firestore().collection('agendamentos').doc(agendamentoMaisProximo.id);
       
@@ -255,8 +275,8 @@ exports.processWhatsAppWebhook = functions.https.onRequest(async (req, res) => {
  */
 async function enviarMensagemSimples(telefone, texto) {
   try {
-    const token = process.env.WHATSAPP_TOKEN || "EAAIj8UCs6L8BO9quBsc0leqkO9ldOR6qgf5Ur0eMG873azXaxFIoxVtoOeqS4Sada0cXxU7k1bbjlxrgZCSs8gCjlwzppXOxCMlFaZAXBP5snVhP6tv6Fl87wvhKYlgJvrWM21TiPZBZBcFtF2nnVEETuRqTZAe2ofoUZAg7F3lnYn3cSXRXbXyb9dwnH9Cr4VpAZDZD";
-    const phoneNumberId = process.env.WHATSAPP_PHONE_ID || "576714648854724";
+    const token = functions.config().whatsapp?.token || "EAAIj8UCs6L8BO9quBsc0leqkO9ldOR6qgf5Ur0eMG873azXaxFIoxVtoOeqS4Sada0cXxU7k1bbjlxrgZCSs8gCjlwzppXOxCMlFaZAXBP5snVhP6tv6Fl87wvhKYlgJvrWM21TiPZBZBcFtF2nnVEETuRqTZAe2ofoUZAg7F3lnYn3cSXRXbXyb9dwnH9Cr4VpAZDZD";
+    const phoneNumberId = functions.config().whatsapp?.phone_id || "576714648854724";
     const version = 'v21.0';
     
     const message = {
