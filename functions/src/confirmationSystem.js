@@ -237,16 +237,17 @@ exports.processWhatsAppWebhook = functions.https.onRequest(async (req, res) => {
         
         console.log('Agendamento confirmado:', agendamentoMaisProximo.id);
       } else if (isCancellation) {
-        // Cancela o agendamento
+        // Em vez de excluir, atualiza o status para cancelado
         await agendamentoRef.update({
           status_confirmacao: 'cancelado',
-          confirmacao_resposta_timestamp: admin.firestore.FieldValue.serverTimestamp()
+          confirmacao_resposta_timestamp: admin.firestore.FieldValue.serverTimestamp(),
+          motivo_cancelamento: 'Cancelado pelo cliente via WhatsApp'
         });
         
         // Envia mensagem de cancelamento
         await enviarMensagemSimples(
           telefone, 
-          `Seu agendamento foi cancelado. Se desejar reagendar, entre em contato conosco.`
+          `Seu agendamento foi cancelado conforme solicitado. Se desejar reagendar, entre em contato conosco.`
         );
         
         console.log('Agendamento cancelado:', agendamentoMaisProximo.id);
