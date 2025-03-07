@@ -35,6 +35,7 @@ import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { MobileDatePicker } from '@mui/x-date-pickers/MobileDatePicker';
 import dayjs from 'dayjs';
 import 'dayjs/locale/pt-br';
+import { normalizeString, formatDisplayString } from '../utils/stringUtils';
 
 const cidades = [
   'Mantena',
@@ -85,7 +86,7 @@ function Clientes() {
           ...data,
           dataNascimento: data.dataNascimento?.toDate?.() || new Date(data.dataNascimento + 'T00:00:00'),
           data: data.data || '',
-          cidade: data.cidade || '',
+          cidade: formatDisplayString(data.cidade) || '',
           horario: data.horario || '',
           status: data.status || 'Pendente',
           descricao: data.descricao || ''
@@ -96,7 +97,7 @@ function Clientes() {
       let clientesFiltrados = clientesData;
       if (filtroCidade) {
         clientesFiltrados = clientesData.filter(cliente => 
-          cliente.cidade === filtroCidade
+          normalizeString(cliente.cidade) === normalizeString(filtroCidade)
         );
       }
 
@@ -114,7 +115,7 @@ function Clientes() {
       const datasRef = collection(db, 'datas_disponiveis');
       const q = query(
         datasRef,
-        where('cidade', '==', filtroCidade),
+        where('cidade', '==', formatDisplayString(filtroCidade)),
         where('status', '==', 'disponível')
       );
       const querySnapshot = await getDocs(q);
@@ -126,7 +127,8 @@ function Clientes() {
       const datas = querySnapshot.docs
         .map(doc => ({
           id: doc.id,
-          ...doc.data()
+          ...doc.data(),
+          cidade: formatDisplayString(doc.data().cidade)
         }))
         .filter(data => {
           const dataDisponivel = new Date(data.data + 'T00:00:00');
@@ -134,7 +136,6 @@ function Clientes() {
           return dataFormatada >= hojeFormatado;
         })
         .sort((a, b) => {
-          // Primeiro ordena por data
           const dataA = new Date(a.data + 'T00:00:00');
           const dataB = new Date(b.data + 'T00:00:00');
           
@@ -142,7 +143,6 @@ function Clientes() {
             return dataA - dataB;
           }
           
-          // Se a data for igual, ordena por horário
           const [horaA, minutoA] = a.horario.split(':').map(Number);
           const [horaB, minutoB] = b.horario.split(':').map(Number);
           
@@ -153,7 +153,6 @@ function Clientes() {
         });
 
       setDatasDisponiveis(datas);
-      // Limpa a data selecionada quando mudar de cidade
       setFiltroPeriodo('');
     } catch (error) {
       console.error('Erro ao carregar datas:', error);

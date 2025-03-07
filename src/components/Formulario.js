@@ -19,6 +19,7 @@ import { ColorModeContext } from '../App';
 import { db, functions } from '../services/firebase';
 import { collection, addDoc, query, where, getDocs, Timestamp } from 'firebase/firestore';
 import { httpsCallable } from 'firebase/functions';
+import { normalizeString, formatDisplayString } from '../utils/stringUtils';
 
 const cidades = [
   'Mantena',
@@ -133,17 +134,12 @@ function Formulario() {
       const datasRef = collection(db, 'datas_disponiveis');
       const q = query(
         datasRef, 
-        where('cidade', '==', cidadeSelecionada)  // Removendo temporariamente o filtro de status
+        where('cidade', '==', formatDisplayString(cidadeSelecionada))  // Normaliza a cidade ao buscar
       );
       const querySnapshot = await getDocs(q);
       
       const datas = querySnapshot.docs.map(doc => {
         const data = doc.data();
-        console.log('Data encontrada:', {
-          id: doc.id,
-          ...data,
-          dataFormatada: new Date(data.data + 'T00:00:00').toLocaleDateString('en-CA')
-        });
         return {
           id: doc.id,
           ...data
@@ -154,18 +150,11 @@ function Formulario() {
       const hoje = new Date();
       hoje.setHours(0, 0, 0, 0);
       const hojeFormatado = hoje.toLocaleDateString('en-CA');
-      console.log('Data de hoje:', hojeFormatado);
       
       const datasFuturas = datas.filter(data => {
         const dataDisponivel = new Date(data.data + 'T00:00:00');
         const dataFormatada = dataDisponivel.toLocaleDateString('en-CA');
         const disponivel = dataFormatada >= hojeFormatado && data.status === 'disponível';
-        console.log('Verificando data:', {
-          data: data.data,
-          dataFormatada,
-          status: data.status,
-          disponivel
-        });
         return disponivel;
       }).sort((a, b) => {
         const dataA = new Date(a.data + 'T00:00:00');
@@ -173,7 +162,6 @@ function Formulario() {
         return dataA - dataB;
       });
 
-      console.log('Datas futuras filtradas:', datasFuturas);
       setDatasDisponiveis(datasFuturas);
     } catch (error) {
       console.error('Erro ao carregar datas disponíveis:', error);
@@ -297,76 +285,34 @@ function Formulario() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
-    if (!nome || !cidade || !data || !horario) {
-      setError('Preencha todos os campos obrigatórios');
-      return;
-    }
-
-    // Só valida o telefone se foi preenchido
-    if (telefone && telefone.length < 14) {
-      setError('Número de telefone incompleto');
-      return;
-    }
-
     setLoading(true);
     setError('');
 
     try {
-      // Verificar se a data selecionada está disponível
-      const dataExiste = datasDisponiveis.some(d => {
-        const dataDisp = new Date(d.data + 'T00:00:00');
-        const dataSel = new Date(data + 'T00:00:00');
-        return dataDisp.toLocaleDateString('en-CA') === dataSel.toLocaleDateString('en-CA');
-      });
+      // Normaliza a cidade antes de salvar
+      const cidadeFormatada = formatDisplayString(cidade);
       
-      if (!dataExiste) {
-        throw new Error('Data selecionada não está disponível');
-      }
-
-      // Verificar se o horário ainda está disponível
-      const dataLocal = new Date(data + 'T00:00:00');
-      const dataFormatada = dataLocal.toLocaleDateString('en-CA');
-
-      const agendamentosRef = collection(db, 'agendamentos');
-      const q = query(
-        agendamentosRef,
-        where('cidade', '==', cidade),
-        where('data', '==', dataFormatada),
-        where('horario', '==', horario)
-      );
-      const querySnapshot = await getDocs(q);
-      
-      if (!querySnapshot.empty) {
-        throw new Error('Este horário já foi agendado. Por favor, escolha outro horário.');
-      }
-
-      const telefoneWhatsApp = telefone ? formatarTelefoneParaWhatsApp(telefone) : '';
-
-      // Adicionar o agendamento ao Firestore
       const docRef = await addDoc(collection(db, 'agendamentos'), {
         nome: nome.trim(),
-        telefone: telefoneWhatsApp,
-        cidade,
-        data: dataFormatada,
-        horario,
-        descricao: descricao.trim(),
-        criadoEm: Timestamp.now(),
-        status: 'pendente'
+        dataNascimento: dataNascimento,
+        telefone: telefone.trim(),
+        cidade: cidadeFormatada, // Usa a cidade formatada
+        data: data,
+        horario: horario,
+        status: 'Pendente',
+        criadoEm: new Date()
       });
 
-      console.log('Agendamento criado com ID:', docRef.id);
-
       // Enviar notificação por WhatsApp se tiver telefone
-      if (telefoneWhatsApp) {
+      if (telefone) {
         try {
           // Formatar a data para exibição
-          const dataFormatadaBR = new Date(dataFormatada).toLocaleDateString('pt-BR');
+          const dataFormatadaBR = new Date(data).toLocaleDateString('pt-BR');
           
           // Chamar a Cloud Function para enviar a mensagem
           const sendWhatsAppConfirmation = httpsCallable(functions, 'sendWhatsAppConfirmation');
           const resultado = await sendWhatsAppConfirmation({
-            telefone: telefoneWhatsApp,
+            telefone: telefone,
             nome: nome.trim(),
             data: dataFormatadaBR,
             horario: horario,
@@ -394,10 +340,10 @@ function Formulario() {
       }
     } catch (error) {
       console.error('Erro ao agendar:', error);
-      setError(error.message || 'Erro ao agendar. Por favor, tente novamente.');
+      setError('Erro ao realizar agendamento');
+    } finally {
+      setLoading(false);
     }
-
-    setLoading(false);
   };
 
   return (
