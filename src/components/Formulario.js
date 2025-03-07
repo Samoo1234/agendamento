@@ -108,7 +108,6 @@ function Formulario() {
   const [datasDisponiveis, setDatasDisponiveis] = useState([]);
   const [horariosDisponiveis, setHorariosDisponiveis] = useState(horariosPadrao);
   const [dataConfig, setDataConfig] = useState(null);
-  const [dataNascimento, setDataNascimento] = useState('');
   const [medicoInfo, setMedicoInfo] = useState(null);
   const theme = useTheme();
   const colorMode = useContext(ColorModeContext);
@@ -309,7 +308,6 @@ function Formulario() {
       
       const docRef = await addDoc(collection(db, 'agendamentos'), {
         nome: nome.trim(),
-        dataNascimento: dataNascimento,
         telefone: telefone.trim(),
         cidade: cidadeFormatada, // Usa a cidade formatada
         data: data,
@@ -522,20 +520,6 @@ function Formulario() {
             helperText={telefoneError}
             sx={{ mb: 2 }}
             placeholder="(00) 00000-0000"
-          />
-
-          {/* Data de Nascimento */}
-          <TextField
-            fullWidth
-            label="Data de Nascimento"
-            type="date"
-            value={dataNascimento}
-            onChange={(e) => setDataNascimento(e.target.value)}
-            margin="normal"
-            required
-            InputLabelProps={{
-              shrink: true,
-            }}
           />
 
           <TextField
