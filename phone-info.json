@@ -1,0 +1,11 @@
+{
+  "verified_name": "Samtec",
+  "code_verification_status": "EXPIRED",
+  "display_phone_number": "+55 66 9258-2862",
+  "quality_rating": "GREEN",
+  "platform_type": "CLOUD_API",
+  "throughput": {
+    "level": "STANDARD"
+  },
+  "id": "576714648854724"
+}

@@ -120,43 +120,35 @@ function DatasDisponiveis() {
       setCidades(dados);
     } catch (error) {
       console.error('Erro ao carregar cidades:', error);
-      setError('Erro ao carregar lista de cidades');
     }
   };
 
   const carregarDatas = async () => {
     try {
-      const datasRef = collection(db, 'datas_disponiveis');
-      const q = query(datasRef);
+      console.log('🔄 Carregando datas...');
+      const datasRef = collection(db, 'agendamentos');
+      const q = query(datasRef, where('status', '==', 'Disponível'));
       const querySnapshot = await getDocs(q);
       
-      const hoje = new Date();
-      hoje.setHours(0, 0, 0, 0);
-      const hojeFormatado = hoje.toLocaleDateString('en-CA');
-
-      const dados = querySnapshot.docs
-        .map(doc => ({
+      const dados = querySnapshot.docs.map(doc => {
+        const data = doc.data();
+        console.log('📅 Documento original:', doc.id, data);
+        
+        return {
           id: doc.id,
-          ...doc.data(),
-          // Valores padrão para períodos de atendimento caso não existam
-          periodoManha: doc.data().periodoManha || { inicio: '09:00', fim: '12:00' },
-          periodoTarde: doc.data().periodoTarde || { inicio: '14:00', fim: '17:00' },
-          intervalo: doc.data().intervalo || 10
-        }))
-        .filter(data => {
-          const dataAgendamento = new Date(data.data + 'T00:00:00');
-          const dataFormatada = dataAgendamento.toLocaleDateString('en-CA');
-          return dataFormatada >= hojeFormatado;
-        })
-        .sort((a, b) => {
-          const dataA = new Date(a.data + 'T00:00:00');
-          const dataB = new Date(b.data + 'T00:00:00');
-          return dataA - dataB;
-        });
-      
+          ...data,
+          data: data.data || 'Data inválida',
+          medicoNome: data.medicoNome || '',
+          horario: data.horario || '',
+          status: data.status || 'Disponível'
+        };
+      });
+
+      console.log('📊 Total de datas encontradas:', dados.length);
       setDatas(dados);
+      
     } catch (error) {
-      console.error('Erro ao carregar datas:', error);
+      console.error('❌ Erro ao carregar datas:', error);
       setError('Erro ao carregar datas disponíveis');
     } finally {
       setLoading(false);
@@ -174,9 +166,6 @@ function DatasDisponiveis() {
       setLoading(true);
       setError('');
 
-      const dataLocal = new Date(data + 'T00:00:00');
-      const dataFormatada = dataLocal.toLocaleDateString('en-CA');
-
       const dataExiste = await verificarDataExistente(cidade, data);
       if (dataExiste) {
         throw new Error('Esta data já está cadastrada para esta cidade');
@@ -185,18 +174,21 @@ function DatasDisponiveis() {
       // Encontra os dados do médico selecionado
       const medicoSelecionado = medicos.find(m => m.id === medico);
 
+      // Cria um objeto Date com a data selecionada
+      const [ano, mes, dia] = data.split('-');
+      const timestamp = new Date(ano, mes - 1, dia); // mes - 1 porque em JS os meses começam em 0
+
       // Adiciona os períodos de atendimento padrão
       await addDoc(collection(db, 'datas_disponiveis'), {
         cidade,
-        data: dataFormatada,
+        data: timestamp,
         medicoId: medico,
         medicoNome: medicoSelecionado.nome,
         status: 'disponível',
         criadoEm: new Date(),
-        // Adiciona os períodos de atendimento padrão
         periodoManha: { inicio: '09:00', fim: '12:00' },
         periodoTarde: { inicio: '14:00', fim: '17:00' },
-        intervalo: 10 // em minutos
+        intervalo: 10
       });
       
       setSuccess('Data cadastrada com sucesso!');
@@ -224,14 +216,11 @@ function DatasDisponiveis() {
   };
 
   const verificarDataExistente = async (cidadeCheck, dataCheck) => {
-    const dataLocal = new Date(dataCheck + 'T00:00:00');
-    const dataFormatada = dataLocal.toLocaleDateString('en-CA');
-
     const datasRef = collection(db, 'datas_disponiveis');
     const q = query(
       datasRef,
       where('cidade', '==', cidadeCheck),
-      where('data', '==', dataFormatada)
+      where('data', '==', dataCheck)
     );
     const querySnapshot = await getDocs(q);
     return !querySnapshot.empty;
@@ -566,7 +555,11 @@ function DatasDisponiveis() {
               <TableRow key={data.id}>
                 <TableCell>{data.cidade}</TableCell>
                 <TableCell>
-                  {new Date(data.data + 'T00:00:00').toLocaleDateString('pt-BR')}
+                  {data.data === 'Data inválida' ? (
+                    <Typography color="error">Data inválida</Typography>
+                  ) : (
+                    new Date(data.data).toLocaleDateString('pt-BR')
+                  )}
                 </TableCell>
                 <TableCell>{data.medicoNome}</TableCell>
                 <TableCell>

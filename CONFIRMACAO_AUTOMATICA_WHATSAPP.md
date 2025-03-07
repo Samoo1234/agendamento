@@ -170,6 +170,27 @@ async function simularRespostaCliente() {
 simularRespostaCliente();
 ```
 
+## Atendimento por IA
+
+Além do sistema de confirmação, agora também implementamos um atendimento automatizado por IA que é ativado quando o cliente envia qualquer mensagem que não seja uma resposta de confirmação.
+
+### Fluxo de Funcionamento
+
+1. Cliente envia uma mensagem para o número do WhatsApp (que não seja "Sim" ou "Não")
+2. Sistema identifica que não é uma resposta de confirmação
+3. Sistema processa a mensagem usando o modelo GPT-4o mini da OpenAI
+4. Sistema envia uma resposta contextualizada gerada pela IA
+
+### Recursos do Atendimento por IA
+
+- **Contextualização**: A IA tem acesso a informações básicas do cliente e seus agendamentos ativos
+- **Histórico de Conversa**: O sistema mantém o histórico da conversa para fornecer respostas contextualizadas
+- **Monitoramento de Custos**: Cada interação é registrada para monitoramento de custos e uso
+
+### Configuração
+
+Para configurar o atendimento por IA, consulte o documento [ATENDIMENTO_IA_WHATSAPP.md](./ATENDIMENTO_IA_WHATSAPP.md).
+
 ## Observações Importantes
 
 1. **Segurança**: O token de verificação do webhook é sensível e não deve ser compartilhado.

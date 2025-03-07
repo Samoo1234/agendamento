@@ -78,34 +78,36 @@ function Clientes() {
   const carregarClientes = async () => {
     try {
       const clientesRef = collection(db, 'agendamentos');
-      const snapshot = await getDocs(clientesRef);
+      let q = query(clientesRef);
+      
+      // Aplica os filtros na query
+      if (filtroCidade) {
+        q = query(clientesRef, where('cidade', '==', filtroCidade));
+      }
+      if (filtroPeriodo) {
+        q = query(q, where('data', '==', filtroPeriodo));
+      }
+      
+      const snapshot = await getDocs(q);
       const clientesData = snapshot.docs.map(doc => {
         const data = doc.data();
         return {
           id: doc.id,
           ...data,
-          dataNascimento: data.dataNascimento?.toDate?.() || new Date(data.dataNascimento + 'T00:00:00'),
           data: data.data || '',
-          cidade: formatDisplayString(data.cidade) || '',
+          cidade: data.cidade || '',
           horario: data.horario || '',
           status: data.status || 'Pendente',
           descricao: data.descricao || ''
         };
       });
 
-      // Filtrar por cidade se necessário
-      let clientesFiltrados = clientesData;
-      if (filtroCidade) {
-        clientesFiltrados = clientesData.filter(cliente => 
-          normalizeString(cliente.cidade) === normalizeString(filtroCidade)
-        );
-      }
-
-      setClientes(clientesFiltrados);
+      console.log('Clientes encontrados:', clientesData); // Debug
+      setClientes(clientesData);
       setLoading(false);
     } catch (error) {
       console.error('Erro ao carregar clientes:', error);
-      setError('Erro ao carregar clientes');
+      setError('Erro ao carregar lista de clientes');
       setLoading(false);
     }
   };

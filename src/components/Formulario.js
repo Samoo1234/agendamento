@@ -108,6 +108,8 @@ function Formulario() {
   const [datasDisponiveis, setDatasDisponiveis] = useState([]);
   const [horariosDisponiveis, setHorariosDisponiveis] = useState(horariosPadrao);
   const [dataConfig, setDataConfig] = useState(null);
+  const [dataNascimento, setDataNascimento] = useState('');
+  const [medicoInfo, setMedicoInfo] = useState(null);
   const theme = useTheme();
   const colorMode = useContext(ColorModeContext);
 
@@ -229,12 +231,15 @@ function Formulario() {
       if (!querySnapshot.empty) {
         const dataDoc = querySnapshot.docs[0].data();
         setMedicoNome(dataDoc.medicoNome || '');
+        setMedicoInfo(dataDoc);
       } else {
         setMedicoNome('');
+        setMedicoInfo(null);
       }
     } catch (error) {
       console.error('Erro ao carregar informações do médico:', error);
       setMedicoNome('');
+      setMedicoInfo(null);
     }
   };
 
@@ -285,6 +290,16 @@ function Formulario() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!nome || !telefone || !cidade || !data || !horario) {
+      setError('Preencha todos os campos obrigatórios');
+      return;
+    }
+
+    if (!validarTelefone(telefone)) {
+      setError('Telefone inválido');
+      return;
+    }
+
     setLoading(true);
     setError('');
 
@@ -300,7 +315,8 @@ function Formulario() {
         data: data,
         horario: horario,
         status: 'Pendente',
-        criadoEm: new Date()
+        criadoEm: new Date(),
+        descricao: descricao
       });
 
       // Enviar notificação por WhatsApp se tiver telefone
@@ -506,6 +522,20 @@ function Formulario() {
             helperText={telefoneError}
             sx={{ mb: 2 }}
             placeholder="(00) 00000-0000"
+          />
+
+          {/* Data de Nascimento */}
+          <TextField
+            fullWidth
+            label="Data de Nascimento"
+            type="date"
+            value={dataNascimento}
+            onChange={(e) => setDataNascimento(e.target.value)}
+            margin="normal"
+            required
+            InputLabelProps={{
+              shrink: true,
+            }}
           />
 
           <TextField

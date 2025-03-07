@@ -1,0 +1,8 @@
+{
+  "error": {
+    "message": "(#100) Tried accessing nonexisting field (message_templates) on node type (WhatsAppBusinessPhoneNumber)",
+    "type": "OAuthException",
+    "code": 100,
+    "fbtrace_id": "AsMvdWMz_Q25ehlWSknzDYw"
+  }
+}

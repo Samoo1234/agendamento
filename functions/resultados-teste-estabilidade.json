@@ -1,0 +1,120 @@
+{
+  "timestamp": "2025-03-01T17:27:46.301Z",
+  "modelo": "gpt-4o-mini",
+  "resultados": [
+    {
+      "fase": "openai",
+      "pergunta": "Qual o horário de funcionamento da ótica?",
+      "status": "sucesso",
+      "resposta": "A Ótica Davi funciona de segunda a sexta, das 8h às 18h, e aos sábados, das 8h às 12h.",
+      "tempo": 1.374
+    },
+    {
+      "fase": "openai",
+      "pergunta": "Vocês vendem lentes de contato?",
+      "status": "sucesso",
+      "resposta": "Sim, vendemos lentes de contato! Temos diferentes tipos e marcas disponíveis. Se precisar de ajuda para escolher, estamos à disposição.",
+      "tempo": 0.847
+    },
+    {
+      "fase": "openai",
+      "pergunta": "Quanto custa um óculos Ray-Ban?",
+      "status": "sucesso",
+      "resposta": "Os óculos Ray-Ban geralmente variam entre R$ 500 a R$ 1.500, dependendo do modelo e das lentes escolhidas. Se precisar de mais informações ou quiser ver modelos específicos, estou à disposição!",
+      "tempo": 0.988
+    },
+    {
+      "fase": "openai",
+      "pergunta": "Vocês aceitam cartão de crédito?",
+      "status": "sucesso",
+      "resposta": "Sim, aceitamos cartão de crédito. Você pode pagar suas compras com os principais cartões. Se precisar de mais informações sobre as opções de pagamento, é só perguntar!",
+      "tempo": 1.132
+    },
+    {
+      "fase": "openai",
+      "pergunta": "Como faço para marcar um exame de vista?",
+      "status": "sucesso",
+      "resposta": "Para marcar um exame de vista, você pode nos visitar pessoalmente na Ótica Davi ou ligar para nós durante o horário de funcionamento, que é de segunda a sexta, das 8h às 18h, e aos sábados, das 8h às 12h. Nossa equipe ficará feliz em agendar um horário para você!",
+      "tempo": 1.92
+    },
+    {
+      "fase": "whatsapp",
+      "mensagem": "A Ótica Davi funciona de segunda a sexta, das 8h às 18h, e aos sábados, das 8h às 12h.",
+      "status": "erro",
+      "erro": {
+        "error": {
+          "message": "The access token could not be decrypted",
+          "type": "OAuthException",
+          "code": 190,
+          "fbtrace_id": "AZufg5n10CgOE2bgmaZD1z0"
+        }
+      }
+    },
+    {
+      "fase": "whatsapp",
+      "mensagem": "Sim, vendemos lentes de contato! Temos diferentes tipos e marcas disponíveis. Se precisar de ajuda para escolher, estamos à disposição.",
+      "status": "erro",
+      "erro": {
+        "error": {
+          "message": "The access token could not be decrypted",
+          "type": "OAuthException",
+          "code": 190,
+          "fbtrace_id": "ARC59wOwP8aOn8LZuYtnPh-"
+        }
+      }
+    },
+    {
+      "fase": "whatsapp",
+      "mensagem": "Os óculos Ray-Ban geralmente variam entre R$ 500 a R$ 1.500, dependendo do modelo e das lentes escolhidas. Se precisar de mais informações ou quiser ver modelos específicos, estou à disposição!",
+      "status": "erro",
+      "erro": {
+        "error": {
+          "message": "The access token could not be decrypted",
+          "type": "OAuthException",
+          "code": 190,
+          "fbtrace_id": "ABtJaiNaXZiJ_yEf5BPVcEK"
+        }
+      }
+    },
+    {
+      "fase": "whatsapp",
+      "mensagem": "Sim, aceitamos cartão de crédito. Você pode pagar suas compras com os principais cartões. Se precisar de mais informações sobre as opções de pagamento, é só perguntar!",
+      "status": "erro",
+      "erro": {
+        "error": {
+          "message": "The access token could not be decrypted",
+          "type": "OAuthException",
+          "code": 190,
+          "fbtrace_id": "AkT9j1Lq8A_Nbnn3Sb8q0MZ"
+        }
+      }
+    },
+    {
+      "fase": "whatsapp",
+      "mensagem": "Para marcar um exame de vista, você pode nos visitar pessoalmente na Ótica Davi ou ligar para nós durante o horário de funcionamento, que é de segunda a sexta, das 8h às 18h, e aos sábados, das 8h às 12h. Nossa equipe ficará feliz em agendar um horário para você!",
+      "status": "erro",
+      "erro": {
+        "error": {
+          "message": "The access token could not be decrypted",
+          "type": "OAuthException",
+          "code": 190,
+          "fbtrace_id": "AgXYJKf9nnHQvXsXdicKb-k"
+        }
+      }
+    }
+  ],
+  "estatisticas": {
+    "openai": {
+      "total": 5,
+      "sucesso": 5,
+      "erro": 0,
+      "taxaSucesso": 100
+    },
+    "whatsapp": {
+      "total": 5,
+      "sucesso": 0,
+      "erro": 5,
+      "taxaSucesso": 0
+    }
+  }
+}

@@ -1,0 +1,86 @@
+{
+  "timestamp": "2025-03-01T17:40:14.502Z",
+  "modelo": "gpt-4o-mini",
+  "resultados": [
+    {
+      "status": "sucesso",
+      "resposta": "Os óculos Ray-Ban geralmente têm uma faixa de preço que varia de R$ 400 a R$ 1.200, dependendo do modelo e das lentes. Recomendo visitar a Ótica Davi para conferir as opções disponíveis.",
+      "tempo": 1.605,
+      "timestamp": "2025-03-01T17:35:31.732Z",
+      "pergunta": "Quanto custa um óculos Ray-Ban?",
+      "testeNumero": 1
+    },
+    {
+      "status": "sucesso",
+      "resposta": "O horário de funcionamento da Ótica Davi é de segunda a sexta, das 8h às 18h, e aos sábados, das 8h às 12h.",
+      "tempo": 1.764,
+      "timestamp": "2025-03-01T17:36:03.506Z",
+      "pergunta": "Qual o horário de funcionamento da ótica?",
+      "testeNumero": 2
+    },
+    {
+      "status": "sucesso",
+      "resposta": "Os óculos Ray-Ban geralmente estão na faixa de preço de R$ 400 a R$ 1.200, dependendo do modelo e das lentes. Se precisar de ajuda para escolher um modelo específico, estou à disposição!",
+      "tempo": 1.525,
+      "timestamp": "2025-03-01T17:36:35.053Z",
+      "pergunta": "Quanto custa um óculos Ray-Ban?",
+      "testeNumero": 3
+    },
+    {
+      "status": "sucesso",
+      "resposta": "Sim, aceitamos cartão de crédito como forma de pagamento na Ótica Davi.",
+      "tempo": 1.1,
+      "timestamp": "2025-03-01T17:37:06.175Z",
+      "pergunta": "Vocês aceitam cartão de crédito?",
+      "testeNumero": 4
+    },
+    {
+      "status": "sucesso",
+      "resposta": "Sim, aceitamos cartão de crédito como forma de pagamento. Se precisar de mais informações sobre as condições, é só perguntar!",
+      "tempo": 1.215,
+      "timestamp": "2025-03-01T17:37:37.417Z",
+      "pergunta": "Vocês aceitam cartão de crédito?",
+      "testeNumero": 5
+    },
+    {
+      "status": "sucesso",
+      "resposta": "Os óculos Ray-Ban costumam variar bastante de preço, geralmente começando em torno de R$ 500 e podendo chegar a mais de R$ 1.500, dependendo do modelo e das lentes. Se precisar de mais informações sobre opções específicas, estou à disposição!",
+      "tempo": 1.536,
+      "timestamp": "2025-03-01T17:38:09.003Z",
+      "pergunta": "Quanto custa um óculos Ray-Ban?",
+      "testeNumero": 6
+    },
+    {
+      "status": "sucesso",
+      "resposta": "A Ótica Davi funciona de segunda a sexta das 8h às 18h e aos sábados das 8h às 12h.",
+      "tempo": 1.259,
+      "timestamp": "2025-03-01T17:38:40.282Z",
+      "pergunta": "Qual o horário de funcionamento da ótica?",
+      "testeNumero": 7
+    },
+    {
+      "status": "sucesso",
+      "resposta": "Para marcar um exame de vista na Ótica Davi, você pode entrar em contato conosco pelo telefone ou visitar nossa loja durante o horário de funcionamento. Nossa equipe ficará feliz em agendar um horário para você!",
+      "tempo": 1.366,
+      "timestamp": "2025-03-01T17:39:11.654Z",
+      "pergunta": "Como faço para marcar um exame de vista?",
+      "testeNumero": 8
+    },
+    {
+      "status": "sucesso",
+      "resposta": "Sim, na Ótica Davi vendemos lentes de contato. Temos uma variedade de marcas e tipos disponíveis. Se precisar de mais informações ou ajuda para escolher, estamos à disposição!",
+      "tempo": 1.517,
+      "timestamp": "2025-03-01T17:39:43.188Z",
+      "pergunta": "Vocês vendem lentes de contato?",
+      "testeNumero": 9
+    },
+    {
+      "status": "sucesso",
+      "resposta": "A Ótica Davi funciona de segunda a sexta, das 8h às 18h, e aos sábados, das 8h às 12h.",
+      "tempo": 1.309,
+      "timestamp": "2025-03-01T17:40:14.502Z",
+      "pergunta": "Qual o horário de funcionamento da ótica?",
+      "testeNumero": 10
+    }
+  ]
+}

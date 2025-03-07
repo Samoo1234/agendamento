@@ -1,0 +1,13 @@
+{
+  "type": "service_account",
+  "project_id": "gen-lang-client-0874694966",
+  "private_key_id": "2b9391252bbb15d785192946acc1109f7edab87d",
+  "private_key": "-----BEGIN PRIVATE KEY-----\nMIIEvwIBADANBgkqhkiG9w0BAQEFAASCBKkwggSlAgEAAoIBAQCwWCaGtDoqd6Qt\nyFtceVuxhqhO3lTIcKglaaHYsp09hSg+1kkGdIVfRaCXT2dT26lxJ6jdyPG7S7Q3\nIe68W692kIc0X+Ed99VAwkRKei9rA6GPIyp/GWVWSBdt9wDX6VcHUn7ipsaAH0Xc\n9TmOsZpzy1ErsDgKs7aS0CZgzXajtH9PoldRAygQvOjXwX84p+EHxEug7aZwqy8T\nfnCiE2GL9d/l282pxeJO7ublzM4rUX2ccoesJKDgTeVoUUhY7sN1aLhzcUHZa6o7\nWo7o0IyU284qjNt8e/e02PkrhNvGaSk+CPzeEr7qq1th9TYUck3dFe5LNV8Ti9CA\nyKgpMe5hAgMBAAECggEAAsYS2Q86/lGtG0E/BU3YCOCkLhVmLP7vTiNYCzIIB3Xc\nOQd4Kj9T8mMvJaIh7xo8kziQpJMVZkudtTj16drhVX1BeyvqPQ/vDUU2UMY/j7CE\nw90a59k3lFYESakBx45L3aQeYHnyE7AqPPxTIEZKi864uKCyyPb5r1vRzAz/SY+L\nDX8853segay7yIarghpp8aV7bbWmLeg8IuCK5Asw42lNJLyBE5ap1b/UmPdV2j9O\nGEAx1581kQ1vMD+ruTf02l5S0JcPOLqXwH24wywMJj07UUiV36b+9ahBj+1nTyl1\nYJ6MRjv5qTuulcuTY/1A74jOC8z/WAa+q3RDb5hvgQKBgQDgPZkdjX+BQ5nsbj3o\nIP3JTMk/sySHbYYIoKtOx/30I3IZxId7WUbalfRsmgYS8C6VpCZjAdRdbR13dU9J\nkrq43t26hYamqsYvyNv8Waz2YFbKc68CFEfqyJkjsbw0yS+xWBw4WKXOGAQZ2aLp\nQNGX+MH8RzDtwno0+7te3KTvEQKBgQDJUfQZgfIqzic33f+WZ1xEVZemRIVPTQxj\nTltStm0b98LsE21I+oKRPkwjQs+s4645aZgSVV4VHETboUFUWxTbR+YL+3Dh2M6q\npXPfSDObmPZecDy38iYS+B3BpUCVoVqcwfmgBwo1hUrLHrxhDOrxNzbzulTeqhPg\nbUTcEDGqUQKBgQDXlKDFtqlkfrdWhE3kAwO6KaY5JWLzCCqZ1M2c+cx+kC079KND\nxPrHXu8UEafRQTOoDZ4SBUpDX4m6tP86/mOhJDILBiADz56lhfdoTlZorwoBrOIN\nn63cXGpN1KvaG6lMWCcZTLBqyM/4gjGLChP2hOMKRO8XRabzlSf39Sxj4QKBgQDE\nI044k7vGLHdVHLpoZGcmRGWtHdDrg9tv3OVoXkdLGkYUDpFIqpgOva0cJXmDrYcO\ndGwuYHF7C8GiYSbu8pYNVa0xO1WtE7e11eBgR03QaGSPebYOWKLzlDwZb9DOdxd6\n5hk36ePuZOCLqHRL8XPscqjdKEqLbRRUcODHrhdVIQKBgQCI2OyRfiASeopAjBG4\n/vmv8GqVt4+OUHwTJLhUYQPQQVjY6dQ8sH9RZgDjkh4Hi50yYeHeSK92+GGHZSKY\nJDcvu53zZZrupxgjMvoC8sfcAlwnK31YL1LtGskcDu5yiglbi7/MSiToxSK9yLVz\nSZk7XngqjMedXhw9c+r0K80EOg==\n-----END PRIVATE KEY-----\n",
+  "client_email": "oticadavi@gen-lang-client-0874694966.iam.gserviceaccount.com",
+  "client_id": "117429515334368336602",
+  "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+  "token_uri": "https://oauth2.googleapis.com/token",
+  "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+  "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/oticadavi%40gen-lang-client-0874694966.iam.gserviceaccount.com",
+  "universe_domain": "googleapis.com"
+}

@@ -1,0 +1,41 @@
+{
+  "url": "https://graph.facebook.com/v22.0/576714648854724/messages",
+  "headers": {
+    "Authorization": "Bearer EAAIj8UCs6L8BO9quBsc0leqkO9ldOR6qgf5Ur0eMG873azXaxFIoxVtoOeqS4Sada0cXxU7k1bbjlxrgZCSs8gCjlwzppXOxCMlFaZAXBP5snVhP6tv6Fl87wvhKYlgJvrWM21TiPZBZBcFtF2nnVEETuRqTZAe2ofoUZAg7F3lnYn3cSXRXbXyb9dwnH9Cr4VpAZDZD",
+    "Content-Type": "application/json"
+  },
+  "data": {
+    "messaging_product": "whatsapp",
+    "to": "5566999161540",
+    "type": "template",
+    "template": {
+      "name": "confirmacao_agendamento",
+      "language": {
+        "code": "pt_BR"
+      },
+      "components": [
+        {
+          "type": "body",
+          "parameters": [
+            {
+              "type": "text",
+              "text": "João Silva"
+            },
+            {
+              "type": "text",
+              "text": "01/03/2025"
+            },
+            {
+              "type": "text",
+              "text": "15:30"
+            },
+            {
+              "type": "text",
+              "text": "Rondonópolis"
+            }
+          ]
+        }
+      ]
+    }
+  }
+}
