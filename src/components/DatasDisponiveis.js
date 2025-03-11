@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { db } from '../services/firebase';
+import { db } from '../config/firebase';
 import { collection, addDoc, query, getDocs, doc, deleteDoc, where, updateDoc } from 'firebase/firestore';
 import Box from '@mui/material/Box';
 import Paper from '@mui/material/Paper';
@@ -117,36 +117,50 @@ function DatasDisponiveis() {
         }))
         .sort((a, b) => a.nome.localeCompare(b.nome));
       
+      console.log('Cidades carregadas:', dados);
       setCidades(dados);
     } catch (error) {
       console.error('Erro ao carregar cidades:', error);
+      setError('Erro ao carregar lista de cidades');
     }
   };
 
   const carregarDatas = async () => {
     try {
+      setLoading(true);
       console.log('🔄 Carregando datas...');
-      const datasRef = collection(db, 'agendamentos');
-      const q = query(datasRef, where('status', '==', 'Disponível'));
+      const datasRef = collection(db, 'datas_disponiveis');
+      const q = query(datasRef);
       const querySnapshot = await getDocs(q);
       
       const dados = querySnapshot.docs.map(doc => {
         const data = doc.data();
         console.log('📅 Documento original:', doc.id, data);
         
+        let dataFormatada = 'Data inválida';
+        if (data.data) {
+          if (data.data instanceof Date) {
+            dataFormatada = data.data.toISOString().split('T')[0];
+          } else if (data.data.toDate) {
+            dataFormatada = data.data.toDate().toISOString().split('T')[0];
+          } else if (typeof data.data === 'string') {
+            dataFormatada = data.data;
+          }
+        }
+        
         return {
           id: doc.id,
           ...data,
-          data: data.data || 'Data inválida',
+          data: dataFormatada,
           medicoNome: data.medicoNome || '',
-          horario: data.horario || '',
-          status: data.status || 'Disponível'
+          cidade: data.cidade || '',
+          status: data.status || 'disponível'
         };
       });
 
       console.log('📊 Total de datas encontradas:', dados.length);
       setDatas(dados);
-      
+      setError(''); // Limpa qualquer erro anterior
     } catch (error) {
       console.error('❌ Erro ao carregar datas:', error);
       setError('Erro ao carregar datas disponíveis');

@@ -1,5 +1,5 @@
 // src/services/whatsappService.js
-import { functions } from '../services/firebase';
+import { functions } from '../config/firebase';
 import { httpsCallable } from 'firebase/functions';
 
 /**

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Box, Grid, Paper, Typography, CircularProgress } from '@mui/material';
 import { collection, query, getDocs, where } from 'firebase/firestore';
-import { db } from '../services/firebase';
+import { db } from '../config/firebase';
 import { useAuth } from '../contexts/AuthContext';
 import {
   Chart as ChartJS,

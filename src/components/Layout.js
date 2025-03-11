@@ -30,7 +30,7 @@ import { ColorModeContext } from '../App';
 import { useMediaQuery } from '@mui/material';
 import CssBaseline from '@mui/material/CssBaseline';
 import { signOut } from 'firebase/auth';
-import { auth } from '../services/firebase';
+import { auth } from '../config/firebase';
 
 const drawerWidth = 240;
 

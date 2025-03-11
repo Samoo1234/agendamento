@@ -16,7 +16,7 @@ import Brightness4Icon from '@mui/icons-material/Brightness4';
 import Brightness7Icon from '@mui/icons-material/Brightness7';
 import { useTheme } from '@mui/material/styles';
 import { ColorModeContext } from '../App';
-import { db, functions } from '../services/firebase';
+import { db } from '../config/firebase';
 import { collection, addDoc, query, where, getDocs, Timestamp } from 'firebase/firestore';
 import { httpsCallable } from 'firebase/functions';
 import { normalizeString, formatDisplayString } from '../utils/stringUtils';

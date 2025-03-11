@@ -27,7 +27,7 @@ import Brightness7Icon from '@mui/icons-material/Brightness7';
 import DeleteIcon from '@mui/icons-material/Delete';
 import { ColorModeContext } from '../App';
 import { collection, query, getDocs, where, deleteDoc, doc } from 'firebase/firestore';
-import { db } from '../services/firebase';
+import { db } from '../config/firebase';
 import { jsPDF } from 'jspdf';
 import 'jspdf-autotable';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';

@@ -36,42 +36,10 @@ function App() {
         palette: {
           mode,
           primary: {
-            main: '#060950',
-            light: '#2f3275',
-            dark: '#03042e',
-            contrastText: '#ffffff',
+            main: '#000033',
           },
           secondary: {
-            main: '#1a237e',
-            light: '#534bae',
-            dark: '#000051',
-            contrastText: '#ffffff',
-          },
-          background: {
-            default: mode === 'light' ? '#f5f5f5' : '#121212',
-            paper: mode === 'light' ? '#ffffff' : '#1e1e1e',
-          },
-        },
-        components: {
-          MuiAppBar: {
-            styleOverrides: {
-              root: {
-                backgroundColor: '#060950',
-              },
-            },
-          },
-          MuiButton: {
-            styleOverrides: {
-              root: {
-                borderRadius: 8,
-              },
-              contained: {
-                backgroundColor: '#060950',
-                '&:hover': {
-                  backgroundColor: '#03042e',
-                },
-              },
-            },
+            main: '#1a1a1a',
           },
         },
       }),
