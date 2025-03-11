@@ -16,10 +16,10 @@ import Brightness4Icon from '@mui/icons-material/Brightness4';
 import Brightness7Icon from '@mui/icons-material/Brightness7';
 import { useTheme } from '@mui/material/styles';
 import { ColorModeContext } from '../App';
-import { db } from '../config/firebase';
-import { collection, addDoc, query, where, getDocs, Timestamp } from 'firebase/firestore';
+import { db, functions } from '../config/firebase';
+import { collection, addDoc, query, where, getDocs } from 'firebase/firestore';
 import { httpsCallable } from 'firebase/functions';
-import { normalizeString, formatDisplayString } from '../utils/stringUtils';
+import { formatDisplayString } from '../utils/stringUtils';
 
 const cidades = [
   'Mantena',
@@ -107,8 +107,6 @@ function Formulario() {
   const [error, setError] = useState('');
   const [datasDisponiveis, setDatasDisponiveis] = useState([]);
   const [horariosDisponiveis, setHorariosDisponiveis] = useState(horariosPadrao);
-  const [dataConfig, setDataConfig] = useState(null);
-  const [medicoInfo, setMedicoInfo] = useState(null);
   const theme = useTheme();
   const colorMode = useContext(ColorModeContext);
 
@@ -188,7 +186,6 @@ function Formulario() {
       let config = null;
       if (!configSnapshot.empty) {
         config = configSnapshot.docs[0].data();
-        setDataConfig(config);
       }
 
       // Gerar horários com base na configuração
@@ -230,15 +227,12 @@ function Formulario() {
       if (!querySnapshot.empty) {
         const dataDoc = querySnapshot.docs[0].data();
         setMedicoNome(dataDoc.medicoNome || '');
-        setMedicoInfo(dataDoc);
       } else {
         setMedicoNome('');
-        setMedicoInfo(null);
       }
     } catch (error) {
       console.error('Erro ao carregar informações do médico:', error);
       setMedicoNome('');
-      setMedicoInfo(null);
     }
   };
 
